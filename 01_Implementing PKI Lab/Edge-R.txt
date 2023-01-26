@@ -1,0 +1,221 @@
+﻿
+Edge-R#show run 
+Building configuration...
+
+Current configuration : 4540 bytes
+!
+! Last configuration change at 03:17:49 GST Thu Jan 26 2023
+!
+version 16.6
+service timestamps debug datetime msec
+service timestamps log datetime msec
+platform qfp utilization monitor load 80
+no platform punt-keepalive disable-kernel-core
+platform console serial
+!
+hostname Edge-R
+!
+boot-start-marker
+boot-end-marker
+!
+!
+no logging console
+no logging monitor
+!
+no aaa new-model
+clock timezone GST 4 0
+!         
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain lookup
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+subscriber templating
+! 
+! 
+!         
+! 
+!
+!
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+crypto pki trustpoint Trusted-CA
+ enrollment url http://11.0.0.3:80
+ serial-number
+ fqdn Edge-R.ips.net
+ subject-name CN=Edge-R, O=ips.net
+ revocation-check none
+ rsakeypair Edge-R.ips.net
+!
+!
+crypto pki certificate chain Trusted-CA
+ certificate 02
+  3082023A 308201A3 A0030201 02020102 300D0609 2A864886 F70D0101 05050030 
+  1F311030 0E060355 040A1307 6970732E 6E657431 0B300906 03550403 13024341 
+  301E170D 32333034 32383132 33303430 5A170D32 34303432 37313233 3034305A 
+  30563110 300E0603 55040A13 07697073 2E6E6574 310F300D 06035504 03130645 
+  6467652D 52313130 12060355 0405130B 39334F35 5A4F4254 334D4C30 1B06092A 
+  864886F7 0D010902 160E4564 67652D52 2E697073 2E6E6574 30819F30 0D06092A 
+  864886F7 0D010101 05000381 8D003081 89028181 00AFF425 40CE14DB B6CE5CD4 
+  8346A68E 2B5B3EC8 C6598B7A E1C5BBFB 406CD397 70CD8A06 385FF422 34308DF4 
+  36462E8C 247D25CC F6AE73A2 86571D9E 764ADBC2 28AADCB5 3E9D8F77 4CE0CC82 
+  EB02B45E CB416925 09669E31 05F01465 786CE917 4795A306 22ED8877 5E96DC69 
+  2A0D5DC5 2EB02D30 6FB75807 1A77270D 82BCE7D2 C5020301 0001A34F 304D300B 
+  0603551D 0F040403 0205A030 1F060355 1D230418 30168014 6870550A FD8350DC 
+  0A678493 4ADACD82 F131FEDA 301D0603 551D0E04 1604149A ED6612CA 254815D4 
+  03AFFC22 B117EE34 CD485A30 0D06092A 864886F7 0D010105 05000381 810069B9 
+  1655F55D 3AFC85AD 82ABB1B5 15841391 8E00FFB4 7404E517 7EE11294 08B8ED24 
+  BF0BC0F8 5FA3BB3B 0BDAE530 7E143181 B1805C1D C21CF978 29D66272 7D28F0D0 
+  E5AF48D7 98F58876 7EF238F8 944F2792 27691BF2 28B5D24B 6AE9C26F 368DAB84 
+  3126A73E 57753076 098CB8C9 094AF20D B02FCD42 75689B84 F0004D2F 879D
+        quit
+ certificate ca 01
+  30820217 30820180 A0030201 02020101 300D0609 2A864886 F70D0101 04050030 
+  1F311030 0E060355 040A1307 6970732E 6E657431 0B300906 03550403 13024341 
+  301E170D 32323034 32383132 31393136 5A170D32 35303432 37313231 3931365A 
+  301F3110 300E0603 55040A13 07697073 2E6E6574 310B3009 06035504 03130243 
+  4130819F 300D0609 2A864886 F70D0101 01050003 818D0030 81890281 8100ABD2 
+  2269E5B4 E19D5474 ACBFCF41 0DB0A708 646C5EAA EB767529 0864F080 040D82A0 
+  E22CC81B 81C14769 9B641E98 DED70A35 F90421C6 78EB7BC0 AA4E2CC4 A7C45F33 
+  80459F78 8C8E2CB5 9C0F816C 0ED34F30 95B6802E 2F478C8D F3018498 6C936874 
+  D5595DC1 FA770B47 FCC3C169 4BE107F9 FD58F7A2 4E8456A6 675251E1 23B50203 
+  010001A3 63306130 0F060355 1D130101 FF040530 030101FF 300E0603 551D0F01 
+  01FF0404 03020186 301F0603 551D2304 18301680 14687055 0AFD8350 DC0A6784 
+  934ADACD 82F131FE DA301D06 03551D0E 04160414 6870550A FD8350DC 0A678493 
+  4ADACD82 F131FEDA 300D0609 2A864886 F70D0101 04050003 81810011 9974FABC 
+  FC94FDD6 D0F3B3D7 4C429345 7360B272 8ED36D2F DAB9CF9D B39950D7 CB1DCA62 
+  C17E3A91 E4FCC497 ECFDFE79 C95CC2CE 89752301 41FAEA78 BA65647B D4379AAD 
+  4D866019 9853F174 A417EC5B F0B566B4 433A3399 8ED77A41 C9F3741A 23505EF7 
+  4435142E B7082483 B58327C2 60A1F7EB C1584AC5 0D6C4A8B 3AC63E
+        quit
+!
+!
+!
+!
+!
+!
+!
+!
+!
+license udi pid CSR1000V sn 93O5ZOBT3ML
+diagnostic bootup level minimal
+spanning-tree extend system-id
+!
+!
+!
+!
+redundancy
+!
+!
+!
+!
+!
+!
+cdp run
+! 
+!
+!
+!
+!
+!
+!
+!
+!         
+!
+!
+!
+!
+! 
+! 
+!
+!
+interface GigabitEthernet1
+ ip address 11.0.0.13 255.255.255.0
+ negotiation auto
+ no mop enabled
+ no mop sysid
+!
+interface GigabitEthernet2
+ ip address 13.0.0.1 255.255.255.0
+ negotiation auto
+ no mop enabled
+ no mop sysid
+!
+interface GigabitEthernet3
+ no ip address
+ shutdown 
+ negotiation auto
+ no mop enabled
+ no mop sysid
+!
+interface GigabitEthernet4
+ no ip address
+ shutdown
+ negotiation auto
+ no mop enabled
+ no mop sysid
+!
+!
+router eigrp 1
+ network 11.0.0.0 0.0.0.255
+ network 13.0.0.0 0.0.0.255
+!
+!
+virtual-service csr_mgmt
+!
+ip forward-protocol nd
+ip http server
+ip http authentication local
+ip http secure-server
+!
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+!
+!
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+line con 0
+ stopbits 1
+line vty 0
+ login
+line vty 1 2
+ login
+ length 0
+line vty 3 4
+ login
+!
+!
+!
+!
+!
+!
+end
+
+Edge-R#                         
