@@ -1,0 +1,12 @@
+﻿Server2>                 
+Server2> show ip
+
+NAME        : Server2[1]
+IP/MASK     : 192.168.21.100/24
+GATEWAY     : 192.168.21.1
+DNS         : 
+MAC         : 00:50:79:66:68:02
+LPORT       : 20044
+RHOST:PORT  : 127.0.0.1:20045
+MTU         : 1500
+

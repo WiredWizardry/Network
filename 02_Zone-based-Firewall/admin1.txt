@@ -1,0 +1,14 @@
+﻿
+admin1> 
+admin1>                 
+admin1> show ip
+
+NAME        : admin1[1]
+IP/MASK     : 192.168.20.2/24
+GATEWAY     : 192.168.20.1
+DNS         : 
+MAC         : 00:50:79:66:68:01
+LPORT       : 20042
+RHOST:PORT  : 127.0.0.1:20043
+MTU         : 1500
+

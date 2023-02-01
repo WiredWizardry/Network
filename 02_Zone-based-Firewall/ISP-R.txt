@@ -1,0 +1,201 @@
+﻿
+ISP-R#
+ISP-R#show run
+Building configuration...
+
+Current configuration : 2524 bytes
+!
+! Last configuration change at 00:36:07 UTC Wed Feb 1 2023
+!
+version 16.6
+service timestamps debug datetime msec
+service timestamps log datetime msec
+platform qfp utilization monitor load 80
+no platform punt-keepalive disable-kernel-core
+platform console serial
+!
+hostname ISP-R
+!
+boot-start-marker
+boot-end-marker
+!
+!
+no logging console
+no logging monitor
+!
+no aaa new-model
+!
+!         
+!         
+!         
+!         
+!         
+!         
+!
+!
+no ip domain lookup
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+subscriber templating
+! 
+! 
+! 
+! 
+!
+!
+!
+multilink bundle-name authenticated
+!         
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+license udi pid CSR1000V sn 9UZ05PI9417
+diagnostic bootup level minimal
+spanning-tree extend system-id
+!
+!
+!
+!
+redundancy
+!         
+!
+!
+!
+!
+!
+cdp run
+!
+class-map type inspect match-all ICMP
+ match protocol icmp
+!
+policy-map type inspect ICMP-TO-WAN
+ class type inspect ICMP
+  inspect
+ class class-default
+!
+zone security LAN
+zone security WAN
+zone security DMZ
+zone-pair security DMZ-TO-WAN source DMZ destination WAN
+ description DMZ-TO-WAN TRAFFIC
+ service-policy type inspect ICMP-TO-WAN
+zone-pair security LAN-TO-WAN source LAN destination WAN
+ description LAN-TO-WAN TRAFFIC
+ service-policy type inspect ICMP-TO-WAN
+zone-pair security WAN-TO-DMZ source WAN destination DMZ
+ description WAN-TO-DMZ TRAFFIC
+zone-pair security WAN-TO-LAN source WAN destination LAN
+ description WAN-TO-LAN TRAFFIC
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+! 
+! 
+!
+!
+interface Loopback0
+ ip address 13.0.0.1 255.255.255.255
+!
+interface GigabitEthernet1
+ ip address 11.0.0.1 255.255.255.252
+ ip nat inside
+ zone-member security LAN
+ negotiation auto
+ no mop enabled
+ no mop sysid
+!
+interface GigabitEthernet2
+ ip address 12.0.0.1 255.255.255.252
+ ip nat inside
+ zone-member security DMZ
+ negotiation auto
+ no mop enabled
+ no mop sysid
+!
+interface GigabitEthernet3
+ no ip address
+ shutdown
+ negotiation auto
+ no mop enabled
+ no mop sysid
+!
+interface GigabitEthernet4
+ ip address 192.168.3.221 255.255.255.0
+ ip nat outside
+ zone-member security WAN
+ negotiation auto
+ no mop enabled
+ no mop sysid
+!
+!
+virtual-service csr_mgmt
+!
+ip nat inside source list 1 interface GigabitEthernet4 overload
+ip forward-protocol nd
+ip http server
+ip http authentication local
+ip http secure-server
+ip route 0.0.0.0 0.0.0.0 192.168.3.1
+!
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh client algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+!         
+access-list 1 permit any
+!
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+line con 0
+ stopbits 1
+line vty 0
+ login
+line vty 1
+ login
+ length 0
+line vty 2 4
+ login
+!
+!         
+!
+!
+!
+!
+end
+
+ISP-R#        
