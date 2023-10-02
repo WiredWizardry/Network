@@ -1,0 +1,181 @@
+
+
+
+{! Palo alto configs 
+configure
+set deviceconfig system ip-address 10.254.254.191 netmask 255.255.255.0 default-gateway 10.254.254.1 type static
+commit
+
+admin
+
+
+
+!{ INT-ROUTER
+Config t
+Hostname INT-ROUTER
+no logging monitor 
+no logging console 
+no service config
+no boot network
+
+interface gi1
+ description connection to FW .2
+ ip address 63.63.63.3 255.255.255.254
+ no shut
+
+interface gi2
+ description out to isp .4
+ ip address 63.63.63.5 255.255.255.254
+ no shut
+ 
+router bgp 65001
+ bgp log-neighbor-changes
+ neighbor 63.63.63.4 Remote-as 65000
+ !
+ address-family ipv4
+  bgp dampening
+  neighbor 63.63.63.4 activate
+
+!}
+!{ ISP
+Config t
+Hostname ISP
+no logging monitor 
+no logging console 
+no service config
+no boot network
+
+interface gi3
+ description connection to FW .5
+ ip address 33.33.33.4 255.255.255.254
+ no shut
+
+interface gi2
+ description out to INT-ROUTER .5
+ ip address 63.63.63.4 255.255.255.254
+ no shut
+ 
+router bgp 65000
+ bgp log-neighbor-changes
+ neighbor 63.63.63.5 Remote-as 65001
+ neighbor 33.33.33.5 Remote-as 6600
+ !
+ address-family ipv4
+  bgp dampening
+  neighbor 63.63.63.5 activate
+  neighbor 33.33.33.5 activate
+
+!}
+
+
+!{ Akamia
+Config t
+Hostname Akamia
+no logging monitor 
+no logging console 
+no service config
+no boot network
+
+interface gi2
+ description connection to ISP .4
+ ip address 33.33.33.5 255.255.255.254
+ no shut
+
+interface gi3
+ description out to ATT .5
+ ip address 44.44.44.4 255.255.255.254
+ no shut
+ 
+no router bgp 66000
+router bgp 6600
+ bgp log-neighbor-changes
+ neighbor 33.33.33.4 remote-as 65000
+ neighbor 44.44.44.5 remote-as 60000
+ !
+ address-family ipv4
+  bgp dampening
+  network 33.33.33.4 mask 255.255.255.254
+  network 44.44.44.4 mask 255.255.255.254
+  neighbor 33.33.33.4 activate
+  neighbor 44.44.44.5 activate
+ exit-address-family
+
+
+interface Tunnel0
+  ip address 2.100.20.67 255.255.255.254
+  tunnel source GigabitEthernet2
+  tunnel destination 63.63.63.2
+  no shutdown
+  
+ router bgp 6600
+ neighbor 2.100.20.66 remote-as 65001
+ address-family ipv4
+  neighbor 2.100.20.66 activate
+ exit-address-family 
+  
+! Create the Route-Map to deny specific network
+route-map DENY_55_55_55_0 permit 10
+ match ip address prefix-list DENY_PREFIX
+ set metric 0
+
+! Create the prefix list that matches the network 55.55.55.0/30
+ip prefix-list DENY_PREFIX seq 5 deny 55.55.55.0/30
+ip prefix-list DENY_PREFIX seq 10 permit 0.0.0.0/0 le 32
+
+! Apply the Route-Map to the BGP neighbors
+router bgp 6600
+ address-family ipv4
+  neighbor 33.33.33.4 route-map DENY_55_55_55_0 out
+  neighbor 44.44.44.5 route-map DENY_55_55_55_0 out
+  
+  
+given below configs do i 2.100.20.66 in the bgp routing table for the aggreate to work 
+or is it fine to just have it in my local routing table
+router bgp 6600
+ address-family ipv4
+aggregate-address 2.100.20.0 255.255.255.0 summary-only
+  network 2.100.20.66 mask 255.255.255.254
+!}
+
+!{ AT&T
+Config t
+Hostname AT&T
+no logging monitor 
+no logging console 
+no service config
+no boot network
+
+interface gi1
+ description Local connection
+ ip address 55.55.55.1 255.255.255.252
+ no shut
+
+interface gi2
+ description out to Akamia .4
+ ip address 44.44.44.5 255.255.255.254
+ no shut
+ 
+router bgp 60000
+ bgp log-neighbor-changes
+ no neighbor 44.44.44.4 Remote-as 66000
+ neighbor 44.44.44.4 Remote-as 6600
+
+
+!}
+
+
+!{palo alto
+
+set deviceconfig system ip-address 10.254.254.136 netmask 255.255.255.0 default-gateway 10.254.254.1 type static
+
+63.63.63.2 255.255.255.254
+
+
+Description: AKAMRAN-(VA1IEPFW001A)
+IPv4 Tunnel Network:
+
+Akamai Tunnel IPv4: 2.100.20.67 ( RAN BGP Peer IP)
+Test-tun1 Tunnel IPv4: 2.100.20.66
+
+RAN Tunnel Destination: 33.33.33.5
+Test-tun1 Tunnel Source: 63.63.63.2
