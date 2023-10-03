@@ -1,14 +1,6 @@
 
 
 
-{! Palo alto configs 
-configure
-set deviceconfig system ip-address 10.254.254.191 netmask 255.255.255.0 default-gateway 10.254.254.1 type static
-commit
-
-admin
-
-
 
 !{ INT-ROUTER
 Config t
@@ -68,9 +60,9 @@ router bgp 65000
 !}
 
 
-!{ Akamia
+!{ ISP-GRE
 Config t
-Hostname Akamia
+Hostname ISP-GRE
 no logging monitor 
 no logging console 
 no service config
@@ -128,13 +120,7 @@ router bgp 6600
   neighbor 33.33.33.4 route-map DENY_55_55_55_0 out
   neighbor 44.44.44.5 route-map DENY_55_55_55_0 out
   
-  
-given below configs do i 2.100.20.66 in the bgp routing table for the aggreate to work 
-or is it fine to just have it in my local routing table
-router bgp 6600
- address-family ipv4
-aggregate-address 2.100.20.0 255.255.255.0 summary-only
-  network 2.100.20.66 mask 255.255.255.254
+
 !}
 
 !{ AT&T
@@ -151,7 +137,7 @@ interface gi1
  no shut
 
 interface gi2
- description out to Akamia .4
+ description out to isp .4
  ip address 44.44.44.5 255.255.255.254
  no shut
  
@@ -162,20 +148,3 @@ router bgp 60000
 
 
 !}
-
-
-!{palo alto
-
-set deviceconfig system ip-address 10.254.254.136 netmask 255.255.255.0 default-gateway 10.254.254.1 type static
-
-63.63.63.2 255.255.255.254
-
-
-Description: AKAMRAN-(VA1IEPFW001A)
-IPv4 Tunnel Network:
-
-Akamai Tunnel IPv4: 2.100.20.67 ( RAN BGP Peer IP)
-Test-tun1 Tunnel IPv4: 2.100.20.66
-
-RAN Tunnel Destination: 33.33.33.5
-Test-tun1 Tunnel Source: 63.63.63.2
