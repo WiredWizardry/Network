@@ -1,0 +1,840 @@
+
+
+#{ HQ Firewall Full configs
+	#{ FW1A Configuration:
+	====================
+	config system global 
+	set hostname HQ-FW1A
+	set admintimeout 480
+	end
+
+	config system interface 
+	edit port1
+	set alias MGMT
+	set mode static
+	set ip 10.254.254.200 255.255.255.0
+	set allowaccess ping https ssh http
+	end
+	given the below configuation for Ha on a fortigate how do I force ha sych to start working
+	config system ha
+		set group-name "HA-Pair"
+		set mode a-p
+		set password 123456
+		set hbdev "port6" 0 
+		set override disable
+		set priority 150
+		set monitor "port2" "port3" "port4"
+	end
+
+	--------------------------------------------------------------
+	#}
+
+	#{ FW1B Configuration:
+	====================
+	config system global 
+	set hostname FW1B
+	set admintimeout 480
+	end
+
+	config system ha
+		set group-name "HA-Pair"
+		set mode a-p
+		set password 123456
+		set hbdev "port6" 0 
+		set override disable
+		set priority 100
+		set monitor "port2" "port3" "port4"
+	end
+
+	--------------------------------------------------------------
+	#}
+
+	#{ HQ FW1A/B basic interface configs:
+	====================
+
+	config system interface 
+	edit port3
+	set alias WAN-1
+	set mode static
+	set ip 192.168.1.1 255.255.255.0
+	set allowaccess ping
+	set role wan
+	end
+	   
+	config system interface 
+	edit port4
+	set alias WAN-2
+	set mode static
+	set ip 192.168.2.1 255.255.255.0
+	set allowaccess ping
+	set role wan
+	end
+
+	config system interface 
+	edit port2
+	set alias LAN
+	set mode static
+	set ip 10.0.1.254 255.255.255.0
+	set allowaccess ping
+	set role lan
+	end
+
+	config system dns
+	set primary 8.8.8.8
+	set secondary 1.1.1.1
+	end
+	#}
+
+	#{ ADVPN configuation
+
+	config vpn ipsec phase1-interface
+	edit advpn1
+	set ike-version 2
+	set proposal des-md5
+	set dhgrp 5
+	set authmethod psk
+	set psksecret test123
+	set nattraversal disable
+	set keylife 86400
+	set dpd on-demand
+	set dpd-retrycount 3
+	set dpd-retryinterval 20
+	set interface port3
+	set type dynamic
+	set peertype any
+	set net-device disable
+	set add-route disable
+	set exchange-interface-ip disable 
+	set auto-discovery-sender enable                        
+	next
+	end
+
+	config vpn ipsec phase1-interface
+	edit advpn2
+	set ike-version 2
+	set proposal des-md5
+	set dhgrp 5
+	set authmethod psk
+	set psksecret test123
+	set nattraversal disable
+	set keylife 86400
+	set dpd on-demand
+	set dpd-retrycount 3
+	set dpd-retryinterval 20
+	set interface port4
+	set type dynamic
+	set peertype any
+	set net-device disable
+	set add-route disable
+	set exchange-interface-ip disable 
+	set auto-discovery-sender enable                        
+	next
+	end
+
+	config vpn ipsec phase2-interface
+	edit advpn1
+	set encapsulation tunnel-mode
+	set proposal des-md5
+	set pfs disable
+	set keylife-type seconds
+	set keylifeseconds 43200
+	set keepalive disable
+	set phase1name advpn1
+	next
+	end
+
+	config vpn ipsec phase2-interface
+	edit advpn2
+	set encapsulation tunnel-mode
+	set proposal des-md5
+	set pfs disable
+	set keylife-type seconds
+	set keylifeseconds 43200
+	set keepalive disable
+	set phase1name advpn2
+	next
+	end
+
+	config system interface
+	edit advpn1
+	set ip 172.16.1.1/32
+	set remote-ip 172.16.1.254/24
+	set allowaccess ping
+	set type tunnel
+	set interface port3
+	next
+	end
+
+	config system interface
+	edit advpn2
+	set ip 172.16.2.1/32
+	set remote-ip 172.16.2.254/24
+	set allowaccess ping
+	set type tunnel
+	set interface port4
+	next
+	end
+
+
+	config router bgp
+	set as 65000
+	set router-id 10.0.1.254
+	set ibgp-multipath enable
+
+	config neighbor-group
+	edit advpn1-peers
+	set remote-as 65000
+	set interface advpn1
+	set update-source advpn1
+	set route-reflector-client enable
+	next
+	edit advpn2-peers
+	set remote-as 65000
+	set interface advpn2
+	set update-source advpn2
+	set route-reflector-client enable
+	next
+	end
+	config neighbor-range
+	edit 1
+	set prefix 172.16.1.0 255.255.255.0
+	set neighbor-group advpn1-peers
+	next
+	edit 2
+	set prefix 172.16.2.0 255.255.255.0
+	set neighbor-group advpn2-peers
+	next
+	end
+	config network
+	edit 1
+	set prefix 10.0.1.0 255.255.255.0
+	next 
+	end
+	end
+	#}
+
+
+	#{ HQ SD-WAN with ADVPN configs
+
+config vpn ipsec phase1-interface 
+edit advpn1
+set exchange-ip-addr4 10.10.10.10
+end
+config vpn ipsec phase1-interface 
+edit advpn2
+set exchange-ip-addr4 10.10.10.10
+end
+
+config system sdwan
+set status enable
+end
+
+config system sdwan
+config zone
+edit "ADVPN"
+end
+
+config system sdwan
+config members
+edit 0
+set interface "advpn1"
+set zone "ADVPN"
+end
+
+config system sdwan
+config members
+edit 0
+set interface "advpn2"
+set zone "ADVPN"
+end
+
+config system sdwan
+config zone
+edit "Internet"
+end
+cmd=config system sdwan
+config zone
+edit Internet
+end
+end
+
+config system sdwan
+config members
+edit 0
+set interface "port3"
+set zone "Internet"
+set gateway 192.168.1.254
+end
+
+config system sdwan
+config members
+edit 0
+set interface "port4"
+set zone "Internet"
+set gateway 192.168.2.254
+end
+
+config router static
+edit 0
+set sdwan-zone "Internet" 
+end
+
+
+config firewall policy
+edit 0
+set name "LAN-TO-INTERNET"
+set srcintf "port2" 
+set dstintf "Internet" 
+set action accept
+set srcaddr "all" 
+set dstaddr "all" 
+unset srcaddr6
+unset dstaddr6
+unset src-vendor-mac
+set schedule "always"
+set service "ALL" 
+set logtraffic all
+set nat enable
+unset groups
+unset users
+unset fsso-groups
+unset custom-log-fields
+end
+
+
+config firewall policy
+edit 0
+set name "LAN-TO-ADVPN"
+set srcintf "port2" 
+set dstintf "ADVPN" 
+set action accept
+set srcaddr "all" 
+set dstaddr "all" 
+unset srcaddr6
+unset dstaddr6
+unset src-vendor-mac
+set schedule "always"
+set service "ALL" 
+set logtraffic all
+unset groups
+unset users
+unset fsso-groups
+unset custom-log-fields
+end
+
+config firewall policy
+edit 0
+set name "ADVPN-TO-LAN"
+set srcintf "ADVPN" 
+set dstintf "port2" 
+set action accept
+set srcaddr "all" 
+set dstaddr "all" 
+unset srcaddr6
+unset dstaddr6
+unset src-vendor-mac
+set schedule "always"
+set service "ALL" 
+set logtraffic all
+unset groups
+unset users
+unset fsso-groups
+unset custom-log-fields
+end
+
+
+config firewall policy
+edit 0
+set name "ADVPN-TO-ADVPN"
+set srcintf "ADVPN" 
+set dstintf "ADVPN" 
+set action accept
+set srcaddr "all" 
+set dstaddr "all" 
+unset srcaddr6
+unset dstaddr6
+unset src-vendor-mac
+set schedule "always"
+set service "ALL" 
+set logtraffic all
+unset groups
+unset users
+unset fsso-groups
+unset custom-log-fields
+end
+
+config system interface
+edit "LoopBK"
+set vdom "root"
+set ip 10.10.10.10 255.255.255.255
+set allowaccess ping
+set type loopback
+set role lan
+end
+
+config system interface
+edit "LoopBK"
+config ipv6
+end
+
+config firewall address
+edit "LoopBK address"
+set type interface-subnet
+set interface "LoopBK"
+end
+
+config vpn ipsec phase1-interface 
+edit advpn1
+set exchange-ip-addr4 10.10.10.10
+end
+config vpn ipsec phase1-interface 
+edit advpn2
+set exchange-ip-addr4 10.10.10.10
+end
+
+config firewall policy
+edit 0
+set status disable
+set srcintf "ADVPN" 
+set dstintf "ADVPN" 
+set action accept
+set srcaddr "all" 
+set dstaddr "all" 
+unset srcaddr6
+unset dstaddr6
+unset src-vendor-mac
+set schedule "always"
+set service "ALL" 
+unset groups
+unset users
+unset fsso-groups
+unset custom-log-fields
+
+config firewall policy
+edit 5
+set name "ADVPN-TO-LOOPBACK"
+set dstintf "LoopBK" 
+set logtraffic all
+cmd=config firewall policy
+edit 5
+set name ADVPN-TO-LOOPBACK
+set dstintf LoopBK
+set logtraffic all
+end
+
+config firewall policy
+edit 5
+set status enable
+cmd=config firewall policy
+edit 5
+set status enable
+end
+
+config firewall policy
+edit 0
+set name "LoopBack-to-ADVPN"
+set srcintf "LoopBK" 
+set dstintf "ADVPN" 
+set action accept
+set srcaddr "all" 
+set dstaddr "all" 
+unset srcaddr6
+unset dstaddr6
+unset src-vendor-mac
+set schedule "always"
+set service "ALL" 
+set logtraffic all
+unset groups
+unset users
+unset fsso-groups
+unset custom-log-fields
+end
+
+config system sdwan
+config health-check
+edit "PING_DC"
+set server "10.0.2.254"
+set members "1" "2" 
+end
+
+config firewall address
+edit "DC-10.0.2.0/24"
+set color 18
+set subnet 10.0.2.0 255.255.255.0
+end
+
+end
+config system sdwan
+config service
+edit 0
+set name "DC-Rule"
+unset input-device
+set mode priority
+set dst "DC-10.0.2.0/24" 
+set src "all" 
+unset users
+unset groups
+set health-check "PING_DC" 
+unset priority-members
+set priority-zone "ADVPN" 
+end
+
+#}
+#}
+
+
+#{ DC-FW Full Configs
+	#{ DC FW1A Configuration:
+	====================
+	config system global 
+	set hostname DC-FW1A
+	set admintimeout 480
+	set gui-theme neutrino
+	end
+
+	config system interface 
+	edit port1
+	set alias MGMT
+	set vrf 10
+	set mode static
+	set ip 10.254.254.202 255.255.255.0
+	set allowaccess ping https ssh http
+	end
+
+	config system ha
+		set group-name "HA-Pair"
+		set mode a-p
+		set password 123456
+		set hbdev "port6" 0 
+		set override disable
+		set priority 150
+		set monitor "port2" "port3" "port4"
+	end
+
+	--------------------------------------------------------------
+	#}
+
+
+	#{ DC-FW1B Configuration:
+	====================
+	config system global 
+	set hostname DC-FW1B
+	set admintimeout 480
+	end
+
+	config system ha
+		set group-name "HA-Pair"
+		set mode a-p
+		set password 123456
+		set hbdev "port6" 0 
+		set override disable
+		set priority 100
+		set monitor "port2" "port3" "port4"
+	end
+
+	--------------------------------------------------------------
+	#}
+
+
+	#{ DC-FW1A/B Basic interface configs:
+	====================
+
+	config system interface 
+	edit port3
+	set alias WAN-1
+	set mode static
+	set ip 192.168.3.1 255.255.255.0
+	set allowaccess ping
+	set role wan
+	end
+	   
+	config system interface 
+	edit port4
+	set alias WAN-2
+	set mode static
+	set ip 192.168.4.1 255.255.255.0
+	set allowaccess ping
+	set role wan
+	end
+
+	config system interface 
+	edit port2
+	set alias LAN
+	set mode static
+	set ip 10.0.2.254 255.255.255.0
+	set allowaccess ping
+	set role lan
+	end
+
+	config system dns
+	set primary 8.8.8.8
+	set secondary 1.1.1.1
+	end
+	#}
+
+
+	#{ DC Firewall ADVPN configs
+	config vpn ipsec phase1-interface
+	edit advpn1
+	set ike-version 2
+	set proposal des-md5
+	set dhgrp 5
+	set authmethod psk
+	set psksecret test123
+	set nattraversal disable
+	set keylife 86400
+	set dpd on-idle
+	set dpd-retrycount 3
+	set dpd-retryinterval 20
+	set interface port3
+	set type static
+	set peertype any
+	set remote-gw 192.168.1.1
+	set net-device enable
+	set exchange-interface-ip disable
+	set auto-discovery-receiver enable                        
+	next
+	end
+
+	config vpn ipsec phase1-interface
+	edit advpn2
+	set ike-version 2
+	set proposal des-md5
+	set dhgrp 5
+	set authmethod psk
+	set psksecret test123
+	set nattraversal disable
+	set keylife 86400
+	set dpd on-idle
+	set dpd-retrycount 3
+	set dpd-retryinterval 20
+	set interface port4
+	set type static
+	set peertype any
+	set remote-gw 192.168.2.1
+	set net-device enable
+	set exchange-interface-ip disable
+	set auto-discovery-receiver enable                        
+	next
+	end
+
+	config vpn ipsec phase2-interface
+	edit advpn1
+	set encapsulation tunnel-mode
+	set proposal des-md5
+	set pfs disable
+	set keylife-type seconds
+	set keylifeseconds 43200
+	set phase1name advpn1
+	set auto-negotiate enable
+	next
+	end
+
+	config vpn ipsec phase2-interface
+	edit advpn2
+	set encapsulation tunnel-mode
+	set proposal des-md5
+	set pfs disable
+	set keylife-type seconds
+	set keylifeseconds 43200
+	set phase1name advpn2
+	set auto-negotiate enable
+	next
+	end
+
+	config system interface
+	edit advpn1
+	set ip 172.16.1.2/32
+	set remote-ip 172.16.1.1/24
+	set allowaccess ping
+	set type tunnel
+	set interface port3
+	next
+	end
+
+	config system interface
+	edit advpn2
+	set ip 172.16.2.2/32
+	set remote-ip 172.16.2.1/24
+	set allowaccess ping
+	set type tunnel
+	set interface port4
+	next
+	end
+
+	config router bgp
+	set as 65000
+	set router-id 10.0.2.254
+	set ibgp-multipath enable
+	config neighbor
+	edit 172.16.1.1
+	set remote-as 65000
+	set interface advpn1
+	set update-source advpn1
+	next
+	edit 172.16.2.1
+	set remote-as 65000
+	set interface advpn2
+	set update-source advpn2
+	next
+	end
+	config network
+	edit 1
+	set prefix 10.0.2.0 255.255.255.0
+	next 
+	end
+	end
+
+	#}
+
+	#{ DC SD-WAN with ADVPN configs
+
+
+
+config system sdwan
+config zone
+edit "ADVPN"
+end
+end
+
+config system sdwan
+config members
+edit 0
+set interface "advpn1"
+set zone "ADVPN"
+end
+
+config system sdwan
+config members
+edit 0
+set interface "advpn2"
+set zone "ADVPN"
+end
+
+config system sdwan
+config zone
+edit "Internet"
+end
+end
+
+config system sdwan
+config members
+edit 0
+set interface "port3"
+set zone "Internet"
+set gateway 192.168.3.254
+end
+
+config system sdwan
+config members
+edit 0
+set interface "port4"
+set zone "Internet"
+set gateway 192.168.4.254
+end
+
+config router static
+edit 0
+set sdwan-zone "Internet" 
+
+config firewall policy
+edit 0
+set name "LAN-to-Internet"
+set srcintf "port2" 
+set dstintf "Internet" 
+set action accept
+set srcaddr "all" 
+set dstaddr "all" 
+unset srcaddr6
+unset dstaddr6
+unset src-vendor-mac
+set schedule "always"
+set service "ALL" 
+set logtraffic all
+set nat enable
+unset groups
+unset users
+unset fsso-groups
+unset custom-log-fields
+end
+
+config firewall policy
+edit 0
+set name "LAN-to-ADVPN"
+set srcintf "port2" 
+set dstintf "ADVPN" 
+set action accept
+set srcaddr "all" 
+set dstaddr "all" 
+unset srcaddr6
+unset dstaddr6
+unset src-vendor-mac
+set schedule "always"
+set service "ALL" 
+set logtraffic all
+unset groups
+unset users
+unset fsso-groups
+unset custom-log-fields
+
+config firewall policy
+edit 0
+set name "ADVPN-to-LAN"
+set srcintf "ADVPN" 
+set dstintf "port2" 
+set action accept
+set srcaddr "all" 
+set dstaddr "all" 
+unset srcaddr6
+unset dstaddr6
+unset src-vendor-mac
+set schedule "always"
+set service "ALL" 
+set logtraffic all
+unset groups
+unset users
+unset fsso-groups
+unset custom-log-fields
+
+!config system sdwan
+config health-check
+edit "PING_HQ"
+set server "10.10.10.10"
+set members "1" "2" 
+end
+
+config system sdwan
+config health-check
+edit "PING_HQ"
+config sla
+edit 0
+end
+end
+
+config firewall address
+edit "Subnet-10.0.0.0"
+set color 2
+set subnet 10.0.0.0 255.0.0.0
+end
+
+config system sdwan
+config service
+edit 0
+set name "PING_ADVPN"
+unset input-device
+set mode priority
+set dst "Subnet-10.0.0.0" 
+set src "all" 
+unset users
+unset groups
+set health-check "PING_HQ" 
+unset priority-members
+set priority-zone "ADVPN" 
+end
+
+
+#}
+
+#}
+
+${padding=1;increment=1;start=1}

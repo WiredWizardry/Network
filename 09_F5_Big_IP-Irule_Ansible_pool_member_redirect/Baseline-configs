@@ -1,0 +1,125 @@
+
+
+
+!{ FW1A Configuration:
+====================
+
+config system global 
+set hostname FW1A
+set admintimeout 480
+end
+
+config system interface 
+edit port1
+set alias MGMT
+set mode static
+set ip 10.254.254.200 255.255.255.0
+set allowaccess ping https ssh http
+end
+
+config system interface 
+edit port3
+set alias WAN-1
+set mode static
+set ip 192.168.1.1 255.255.255.0
+set allowaccess ping
+set role wan
+end
+   
+config system interface 
+edit port4
+set alias WAN-2
+set mode static
+set ip 192.168.2.1 255.255.255.0
+set allowaccess ping
+set role wan
+end
+
+config system interface 
+edit port2
+set alias LAN
+set mode static
+set ip 10.0.1.254 255.255.255.0
+set allowaccess ping
+set role lan
+end
+
+config system dns
+set primary 8.8.8.8
+set secondary 1.1.1.1
+end
+
+config system ha
+    set group-name "HA-Pair"
+    set mode a-p
+    set password 123456
+    set hbdev "port6" 0 
+    set override disable
+    set priority 150
+    set monitor "port1" "port2" "port3" "port4"
+end
+--------------------------------------------------------------
+!}
+
+
+!{ FW1B Configuration:
+====================
+
+config system global 
+set hostname FW1B
+set admintimeout 480
+end
+
+config system interface 
+edit port1
+set alias MGMT
+set mode static
+set ip 10.254.254.200 255.255.255.0
+set allowaccess ping https ssh http
+end
+
+config system interface 
+edit port3
+set alias WAN-1
+set mode static
+set ip 192.168.1.1 255.255.255.0
+set allowaccess ping
+set role wan
+end
+   
+config system interface 
+edit port4
+set alias WAN-2
+set mode static
+set ip 192.168.2.1 255.255.255.0
+set allowaccess ping
+set role wan
+end
+
+config system interface 
+edit port2
+set alias LAN
+set mode static
+set ip 10.0.1.254 255.255.255.0
+set allowaccess ping
+set role lan
+end
+
+config system dns
+set primary 8.8.8.8
+set secondary 1.1.1.1
+end
+
+config system ha
+    set group-name "HA-Pair"
+    set mode a-p
+    set password 123456
+    set hbdev "port6" 0 
+    set override disable
+    set priority 150
+    set monitor "port1" "port2" "port3" "port4"
+end
+--------------------------------------------------------------
+!}
+
+
