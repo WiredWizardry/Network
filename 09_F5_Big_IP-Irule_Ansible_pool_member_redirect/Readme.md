@@ -1,323 +1,540 @@
-# FortiGate Basic HA W/ Basic SD-WAN Lab Guide
-
-```Use Case
+```How-To Guide: Configuring Advanced iRule, Data Group, and Ansible Script
 
 ```
 
--   GNS3 / *EVE*-*NG environment*
--   FortiGate firewall images
--   Cisco/ Tunnel termination images
-
-```Required Components
+Given the advanced nature of the configuration, a how-to guide targeting this setup would be most beneficial for senior to lead network engineers. They are likely to have the requisite knowledge, experience, and skills to understand, implement, and manage the complexities of integrating F5 BIG-IP iRules with Ansible automation effectively. Additionally, their role often involves making strategic decisions and providing leadership in complex network environments, aligning well with the demands of this configuration.
 
 ```
 
-1.  **Network devices preconfigured; This lab assumes that you have a network device acting as an ISP connection, already configured and providing access to the internet. Ensure that your network is operational up to this point.**
-2.  **FortiGate KVM image**: You will need a FortiGate virtual machine (KVM image) where all the configurations in this lab will be implemented. Ensure that you have this VM set up and ready for use.
+```
+
+1.  **F5 BIG-IP Device**: Ensure that you have access to an F5 BIG-IP device, which will be used to configure the iRule and the data group.
+2.  **Ansible Environment**: Set up your Ansible environment, which will be used to automate the configuration changes on the F5 BIG-IP.
 
 ```Key Steps
 
 ```
 
-1.  **Network Topology**: We'll design the layout of our network, including the placement of FortiGate firewalls, to ensure proper traffic flow and security.
-2.  **Initial Configuration**: Set up the basic configurations on the FortiGate firewall.
-3.  **Configure FortiGate FW1A**: We'll focus on configuring one of the FortiGate devices for High Availability, ensuring redundancy and fault tolerance.
-4.  **Configure FortiGate FW1B**: Similar to Step III, we'll configure the second FortiGate device for High Availability to establish a robust HA setup.
-5.  **Configure Basic SD-WAN** –We'll delve into SD-WAN configuration to optimize traffic routing over two ISP links, enhancing network performance and reliability.
-6.  **Configure Static Route -** We'll set up static routes to enable efficient routing over the ISP links, directing traffic appropriately.
-7.  **Configure Firewall Policy and Test connectivity - In this final step, we'll create firewall policies to control traffic flow and test connectivity to ensure that our network operates as expected.  
-    **
+**I. Understanding the iRule and Data Group Configuration**
 
-```Lab Topology
+-   **Familiarize yourself with the concept of iRules and their role in traffic management on F5 BIG-IP.**
+-   **Learn about data groups and how they can be used to store configuration data for iRules.**
 
-```
+    **II. Setting Up the Data Group in F5 BIG-IP**
 
-A detailed topology will be outlined in the lab guide, indicating the network layout and connections between the control node and the FortiGate firewall.
+-   **Log into the F5 BIG-IP device and navigate to the data group configuration section.**
+-   **Create a new data group named BlueGreenConfigtest and set up the necessary key-value pairs.**
 
-![](media/9e12c6efc75cb82d8bb282d9261a92bd.png)
+    **III. Creating and Configuring the iRule**
 
-\*please note that in highlighted in red we don’t spend much time on the configuration its up to you to decide to build this out the same
+-   **Access the iRule configuration section on the F5 BIG-IP device.**
+-   **Create a new iRule that includes logic for managing traffic between the Blue and Green server pools based on the data group settings.**
 
-```Lab Devices Information
+    **IV. Integrating Ansible for Automation**
 
-```
+-   **Ensure Ansible is set up and configured correctly.**
+-   **Write an Ansible playbook that will update the BlueGreenConfigtest data group on F5 BIG-IP.**
 
-| Hostname      | Description                                                            | Route-table                                                                                                       |
-|---------------|------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| FW1A/FW1B     | FortiGate firewalls where we will setup HA                             | 192.168.1.1/24 (WAN1) 192.168.2.1/24 (WAN2) 10.0.1.254/24 (LAN) 10.254.254.200/24(MGT) 0.0.0.0/0 (Static Default) |
-|  L2-INT-SW1/2 | I86bi_linux_l2 Cisco basic L2 switch                                   | L2                                                                                                                |
-|  L2-EXT-SW1/2 | I86bi_linux_l2 Cisco basic L2 switch                                   | L2                                                                                                                |
-| ISP1/2        | Pfsense-2.6.0 Acting as ISP and Default GW for FortiGate ISP links 1/2 | 192.168.1.254/24 (LAN1) 192.168.1.254/24 (LAN2)                                                                   |
+    **V. Executing Ansible Playbook to Update iRule Configuration**
 
-# Step 0: Initial configurations
+-   **Run the Ansible playbook to apply the new configurations to the F5 BIG-IP device.**
+-   **Verify that the changes have been applied correctly.**
 
-We will start with the initial Firewall configuration. Configuring LAN, WAN1/2 and MGT
+    **VI. Testing and Validating the Configuration**
 
-| FW1A | !{ FW1A Configuration: ====================  config system global  set hostname FW1A set admintimeout 480 end  config system interface  edit port1 set alias MGT set mode static set ip 10.254.254.200 255.255.255.0 set allowaccess ping https ssh http end  config system interface  edit port3 set alias WAN-1 set mode static set ip 192.168.1.1 255.255.255.0 set allowaccess ping set role wan end   config system interface  edit port4 set alias WAN-2 set mode static set ip 192.168.2.1 255.255.255.0 set allowaccess ping set role wan end  config system interface  edit port2 set alias LAN set mode static set ip 10.0.1.254 255.255.255.0 set allowaccess ping set role lan end  config system dns set primary 8.8.8.8 set secondary 1.1.1.1 end |
-|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| FW1B | config system global  set hostname FW1A set admintimeout 480 end  config system interface  edit port1 set alias MGMT set mode static set ip 10.254.254.201 255.255.255.0 set allowaccess ping https ssh http end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+-   **Conduct thorough testing to ensure that the iRule behaves as expected under different scenarios.**
+-   **Validate that the Ansible playbook successfully automates the configuration changes.**
 
-Validate that routing table matches expected configs using expected command.
+# Understanding the iRule and Data Group Configuration
 
-| get router info routing-table all |
-|-----------------------------------|
+### Introduction to iRules
 
-**FW1A**
+iRules are a powerful feature of the F5 BIG-IP platform, allowing for granular control over traffic. Essentially, iRules are scripts written in F5's TCL-based scripting language, enabling you to direct, reject, rewrite, and manipulate network traffic. iRules offer a level of flexibility that is integral for complex load balancing decisions, traffic routing, and security.
 
-![](media/197b3887957fbd5b3533e73569fd69b9.png)
+#### **Key Concepts in iRules:**
 
-**FW1B**
+-   **Event-Driven**: iRules are executed based on specific events, such as a client request (**HTTP_REQUEST**) or server response (**HTTP_RESPONSE**).
+-   **TCL Scripting**: iRules are written in TCL (Tool Command Language), a dynamic scripting language designed for network environments.
+-   **Traffic Manipulation**: You can use iRules to inspect, modify, and route traffic based on custom logic.
 
-![](media/8c52a0b9d2c79a55e30a5a1589ab4c34.png)
+### The Role of Data Groups in iRules
 
-# Step 1: Configure FortiGate FW1A
+Data groups in F5 BIG-IP act like database tables or arrays. They are used to store and retrieve data within iRules. Essentially, data groups map a set of keys to values and can be referenced in iRules for dynamic decision-making.
 
-First, we login into the FortiGate;
+#### **Types of Data Groups:**
 
-Visit your FortiGate through the GUI using http (use the ip you just configured)
+-   **String**: Maps a string to another string. Ideal for hostname or URL mappings.
+-   **Address**: Maps network addresses. Useful for IP-based decisions.
+-   **Integer**: For integer mappings, often used in rate-limiting scenarios.
 
-https://10.254.254.201
+### Setting Up Data Groups for Advanced iRule Configuration
 
-![](media/2bd84aa8410903277de00bac444bb0f8.png)
+1.  **Purpose of Data Group in Our Scenario**:
+    -   In our setup, the data group **BlueGreenConfigtest** is used to store configuration values that control how the iRule routes traffic. This includes keys for **environment**, **duration**, and **start_time**.
+2.  **Configuring a Data Group**:
+    -   Log into the F5 BIG-IP user interface.
+    -   Navigate to **Local Traffic** \> **iRules** \> **Data Group List**.
+    -   Once there you can create a new data group
 
-Configure HA
+### Deep Dive into iRule Configuration for Traffic Management
 
-Navigate to **System -\> HA**
+1.  **iRule Structure and Syntax**:
+    -   Begin with the **when** statement to define the event that triggers the iRule. For our scenario, **HTTP_REQUEST** is the triggering event.
+    -   Use TCL syntax to write conditional statements and logic.
+2.  **Integrating Data Group in iRule**:
+    -   Utilize the **class match** command to retrieve values from **BlueGreenConfigtest**.
+    -   These values dictate how traffic is routed between the Blue and Green pools.
+3.  **iRule Logic Explained**:
+    -   **Traffic Direction**: Based on the **environment** key, decide whether to route traffic to the Blue or Green pool.
+    -   **Failover Handling**: Use the **duration** and **start_time** keys to manage timed failover, gradually shifting traffic from one pool to another.
+4.  **Advanced Routing Scenarios**:
+    -   Handle instant failover by immediately directing all traffic to one pool.
+    -   Implement load balancing between pools, using data group values to guide the distribution.
 
-![](media/2dbc62aeb90524fa45871b76584475e3.png)
+Understanding how to create and configure iRules and data groups in F5 BIG-IP is crucial for advanced traffic management. This knowledge enables network engineers to build dynamic, responsive network environments that can adapt to various operational requirements. In the next sections, we'll explore how to automate these configurations using Ansible, enhancing efficiency and consistency in network management.
 
-Select -\> **Active-Passive**
+**Setting Up the Data Group in F5 BIG-IP**
 
-Configure the below
+### Introduction to Data Group Setup
 
-| Name                 | Value                | Info                                                                                         |
-|----------------------|----------------------|----------------------------------------------------------------------------------------------|
-| Device priority      | 150                  | (We want FW1A to be Primary)                                                                 |
-| Group name           | HA-Pair              |                                                                                              |
-| Password             | 123456               |                                                                                              |
-| Session pickup       | Enable               | This is enabled so that session is not dropped                                               |
-| Monitor Interfaces   | MGMT LAN WAN-1 WAN-2 | Interfaces to be monitored so that FortiGate fails over to passive if one of the links fails |
-| Heartbeat interfaces | Port6                | Interface to use for HA                                                                      |
+Creating a data group in F5 BIG-IP is a fundamental step in managing and utilizing iRules effectively. Data groups allow for the centralized management of key-value pairs, which can be dynamically referenced in iRules for various operational purposes, such as traffic routing and management decisions.
 
-![](media/5934989222ddd661e7356044ac3d5fd2.png)
+### Step-by-Step Process
 
-**Click [Ok] to commit changes**
+#### **Accessing F5 BIG-IP:**
 
-**Go back to your lab and make sure port6 from FW1A to port6 on FW1B is in place**
+1.  **Login**: Access the F5 BIG-IP web interface by entering the IP address of your F5 device in a web browser. Use your credentials to log in.
 
-**![](media/640192acf728f2165b037c60be88a763.png)**
+#### **Navigating to Data Group Configuration:**
 
-# Step 2: Configure FortiGate FW1B
+1.  **Locate Data Group Section**: After logging in, navigate to the data group configuration section. Go to **Local Traffic** \> **iRules** \> **Data Group List**. This area is where you create and manage your data groups.
 
-First, we login into the FortiGate;
+#### **Creating a New Data Group:**
 
-Visit your FortiGate through the GUI using http (use the ip you just configured)
+1.  **Initiate Creation**: Click on the **Create** button to start setting up a new data group.
+2.  **Configuration Settings**:
+    -   **Name**: Enter a name for your data group, such as **BlueGreenConfigtest**. This name will be used to reference the data group in your iRules.
+    -   **Type**: Choose **String** as the type. This allows you to map string keys to string values.
+    -   **Records**: Add key-value pairs that will be used by the iRule. Initially, you can add placeholders that will later be updated by Ansible. For instance:
+        -   Key: **environment**, Value: **placeholder**
+        -   Key: **duration**, Value: **placeholder**
+        -   Key: **start_time**, Value: **placeholder**
+3.  **Saving the Data Group**:
+    -   After adding the required records, save the data group by clicking **Finished**.
 
-<https://10.254.254.200>
+### Explanation of Data Group Components
 
-![](media/a019517209afac4a166aaf7a0c99b9a3.png)
+#### **Understanding Key-Value Pairs**
 
-**Configure HA**
+-   **Keys**: In our case, **environment**, **duration**, and **start_time** are the keys. They represent the configurable parameters that your iRule will reference.
+-   **Values**: Initially set as **placeholder**, these values will be dynamically updated via Ansible to control the behavior of your iRule.
 
-Navigate to **System -\> HA**
+#### **Role of Data Group in iRule Configuration**
 
-![](media/2dbc62aeb90524fa45871b76584475e3.png)
+-   The data group acts as a dynamic configuration repository for the iRule. By updating the data group values, you can alter the behavior of the iRule without modifying the iRule code itself, offering flexibility and scalability in traffic management.
 
-Select -\> **Active-Passive**
+### Best Practices for Data Group Management
 
-Configure the below
+-   **Naming Convention**: Use clear and descriptive names for your data groups and keys.
+-   **Documentation**: Document the purpose of each key-value pair for future reference and clarity.
+-   **Regular Backups**: Regularly backup your data group configurations as part of your F5 BIG-IP backup routine.
 
-| Name                 | Value                  | Info                                                                                         |
-|----------------------|------------------------|----------------------------------------------------------------------------------------------|
-| Device priority      | 128                    | (We want FW1A to be Primary)                                                                 |
-| Group name           | HA-Pair                |                                                                                              |
-| Password             | 123456                 |                                                                                              |
-| Session pickup       | Enable                 | This is enabled so that session is not dropped                                               |
-| Monitor Interfaces   | MGMT Port2 Port3 Port4 | Interfaces to be monitored so that FortiGate fails over to passive if one of the links fails |
-| Heartbeat interfaces | Port6                  | Interface to use for HA                                                                      |
+Setting up a data group in F5 BIG-IP is a straightforward yet crucial task for efficient iRule management. It not only simplifies the iRule configuration but also provides a flexible way to control the iRule's behavior externally, in this case, through Ansible automation. With the data group now configured, the next steps involve creating the iRule and integrating it with Ansible to manage these configurations dynamically.
 
-![](media/81f90203b74946fc8d813809b633885d.png)
+# Creating and Configuring the iRule in F5 BIG-IP
 
-**Click [Ok] to commit changes**
+### Introduction to iRule Creation
 
-Run below command on both Fw to force synchronize if need
+Creating an iRule in F5 BIG-IP is a key step in implementing advanced traffic management strategies. iRules provide the flexibility to direct, modify, and manipulate network traffic based on specific conditions and requirements.
 
-| execute ha synchronize start |
-|------------------------------|
+### Step-by-Step iRule Configuration Process
 
-As FW1A is synching status will show Not synchronized
+#### **Accessing iRule Section in F5 BIG-IP:**
 
-![](media/c74cb6feee1c1a3851993bf5c62a900d.png)
+1.  **Login to F5 BIG-IP Interface**: Use your credentials to access the F5 BIG-IP web interface.
+2.  **Navigate to iRules**: Go to **Local Traffic** \> **iRules** \> **iRules List**. This area allows you to create, edit, and manage iRules.
 
-Cli command to see HA status:
+#### **Creating a New iRule:**
 
-| get system ha status |
-|----------------------|
-
-Once FW1A is finished synching status will show as synchronized
-
-![](media/f74a0d140de6721e424af6934aafa6a2.png)
-
-Once FW1B has been synchronized it is in a passive state and has the exact same configuration as FW1B. (You will also not be able to login into the device vail http, ssh anymore since the device now has the same mgmt device as FW1A(10.254.254.201) and is just in a passive mode.
-
-![](media/b2339479e72f5755bfc22b2297f65af8.png)On the console you can see that FW1B has the configs of FW1A now
-
-# Step 3: CONFIGURE BASIC SD-WAN
-
-**First, we login into the FortiGate;**
-
-Visit your FortiGate through the GUI using http (use the ip you just configured)
-
-<https://10.254.254.201>
-
-First step is to create a SD-WAN Zone:
-
-Go to **Network \> SD-WAN Zones.** Click **Create New \> SD-WAN Zone.**
-
-![](media/28639dd8c61b0064ed6f3a43a9eb3a6a.png)
-
-Name the New SD-WAN Zone in this case **SDWAN** and click OK to create.
-
-![](media/35f3641aa9594f35722a38212859c1ea.png)
-
-The New SD-WAN Zone is ready however, it is shown as down b/c there is no interface associated with the zone.
-
-![](media/641016a7fedcab7de43815d4ac08ac74.png)
-
-To add interfaces to the SD-WAN Zone.
-
-Go to **Network \> SD-WAN Zones**. Click **Create New \> SD-WAN Member.**
-
-![](media/2089b9450e3c6fea6a0942dda8ae978e.png)
-
-Set the Interface to **WAN-1.** Change the **SD-WAN Zone** to **SDWAN** created earlier.
-
-Set Gateway set to **192.168.1.254**. Leave the Cost as 0. Leave the Priority to 1. Set Status to Enable, and click OK.
-
-![](media/38c715c2e743794a714a6b31a5a4ea15.png)
-
-Repeat the above steps for WAN-2, setting Gateway to the ISP's gateway: **192.168.2.254**
-
-![](media/979f3a8eb648d04d86026b5e5aaec15c.png)
-
-Once both the ISPs interfaces are added to SDWAN the SD-WAN Zone should now show up as green.
-
-![](media/2f56d83dfd7a182d2f5a0e10ddf67a5c.png)
-
-Configure SD-WAN Health-check:
-
-Go to **Network \> Performance SLS**
-
-**![](media/456e6f15379abff00449fc09a90e0048.png)**
-
-Click **Create New and Fill out with below**
-
-![](media/4bc67f9a2b2f76113e344cf8c2c5135b.png)
-
-You should Now see the new SLA in the list
-
-![](media/4cdbf8c0290ec9c3eefaa9ca8c86c52e.png)
-
-This step configuration can also be done vail CLI as Such
-
-| config system sdwan config zone edit "SDWAN" end  config system sdwan set status enable config members edit 1 set interface port1 set zone "SDWAN" set gateway 192.168.1.254 next edit 2 set interface port2 set zone "SDWAN" set gateway 192.168.2.254 next end config system sdwan set load-balance-mode source-dest-ip-based end  config system sdwan config health-check edit dnssrv set server 8.8.8.8 set update-static-route enable set members 1 2 next end end |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-
-# Step 4: Configure Static Route
-
-The next step is to configure static routes so that your ISP links are used as the default gateway.
-
-Go to **Network \> Static Routes**. Click **Create New.** The New Static Route page opens. Set Destination to **Subnet**, and leave the IP address and subnet mask as **0.0.0.0/0.0.0.0**.
-
-From the Interface drop-down list, select SDWAN. Ensure that Status is Enabled. Click OK
-
-![](media/fdeb349c2a85c4ceb8c7de6c64583c44.png)
-
-![](media/8e169ee63c316f72a4766c82b8ce15db.png)
-
-![](media/c677c212ee1e87276bf0b248f48b3464.png)
-
-Configuration above can be done vail CLI as well
-
-| config router static edit 1 set sdwan-zone SDWAN next end |
-|-----------------------------------------------------------|
-
-# Step 5: Configure Firewall Policy and Test connectivity
-
-To allow data to move between your LAN and ISP links a firewall policy must be set up. This policy serves as a rule that tells the FortiGate device to let traffic from the LAN reach the ISP Links and vice versa.
-
-Go to **Policy & Objects \> Firewall Policy**. Click Create New.
-
-![](media/0abb0a54075d3cd01f3e56d94ebda876.png)
-
-The **New Policy** page opens. Set the name, incoming interface, outgoing interface, source, destination, schedule, service, action details as below and **Enable** the policy, then click OK
-
-![](media/70c61e8f4a6c106094d38d171ce4de02.png)
-
-Firewall policy can be created vail CLI as well
-
-| config firewall policy edit 1 set name LAN-to-ISP set srcintf port2 set dstintf SDWAN set srcaddr all set dstaddr all set action accept set schedule always set service ALL set logtraffic all set nat enable set status enable next end |
-|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+1.  **Begin Creation**: Click on the **Create** button.
+2.  **iRule Setup**:
+    -   **Name the iRule**: Provide a descriptive name for your iRule, such as **bluegree_test**.
+    -   **Scripting the iRule**: Enter the iRule script into the provided field. The script should include:
+        -   Event declaration: **when HTTP_REQUEST { ... }**.
+        -   Logic to read data from the **BlueGreenConfigtest** data group.
+        -   Conditional statements to route traffic based on the retrieved data.
+3.  **iRule Logic Explanation**:
+    -   The iRule should contain logic to handle different traffic routing scenarios based on the values in the **BlueGreenConfigtest** data group. For instance, directing traffic to the Blue or Green pool depending on the **environment** value.
+    -   Include logic for timed failover and load balancing, referencing the **duration** and **start_time** keys from the data group.
 
 **  
 **
 
-**Testing and Verification:**
+1.  **Irule example:**
 
-Let’s ping/browse from internal LAN computer Desktop1 to the internet using two different IPs or domain in this case Youtube.com and Google.com
+    **when HTTP_REQUEST {**
 
-First, we have to assign our desktop a IP with the LAN range before we can do any testing
+    **if { [HTTP::uri] starts_with "/index.html" } {**
 
-We can use **10.0.1.10** for Desktop1 and **10.0.1.20** for Desktop2
+    **\# Disable SSL on serverside if required**
 
-![](media/8529c45403b5ee22db9afa72d0ce45e7.png)
+    **SSL::disable serverside**
 
-![](media/02825393c7b7d6b477a3ab8266b0cbe0.png)
+    **\# Retrieve failover initiation, duration, and start time from data groups**
 
-![](media/9e06785689d69031be0af0cad4304843.png)
+    **set failover_initiate [class match -value -- "environment" equals BlueGreenConfigtest]**
 
-Validate that you can reach your default Gateway (10.0.1.254 in our case)
+    **set failover_duration [class match -value -- "duration" equals BlueGreenConfigtest]**
 
-![](media/e83930df332ac39df8eb6531e35d2831.png)
+    **set failover_start_time [class match -value -- "start_time" equals BlueGreenConfigtest]**
 
-![](media/d12e091dfb84e02dd4f69f34b1edc740.png)
+    **\# Determine primary, secondary, and combined pools based on failover initiation**
 
-Validate that you can ping/browse to google.com/YouTube on both Desktop thus validating that Firewall Rules are in place and routing is working to your ISP links.
+    **if { \$failover_initiate equals "Initiate_Blue" } {**
 
-![](media/e76328614bddce189f0b248bd5153212.png)
+    **set primary_pool "Blue"**
 
-![](media/eac7cf049586ed2a861f096048df03c8.png)
+    **set secondary_pool "Green"**
 
-![](media/3172071444adc4afaba28ed84904b4d9.png)
+    **} elseif { \$failover_initiate equals "Initiate_Green" } {**
 
-![](media/f5d37885e1b19b3ac433f825c62486df.png)
+    **set primary_pool "Green"**
 
-IF you want to test HA on the firewalls you can shut down the primary firewall to simulate a Power failure on the Active Firewall or bring down one of the monitored links which would also cause the firewall to failover. You can run a continues ping from your Desktop and notice how the session is kept alive even in the case of the simulated link/power failure.
+    **set secondary_pool "Blue"**
 
-Simulate Power failure
+    **} elseif { \$failover_initiate equals "Load_Balancing" } {**
 
-Ping test
+    **\# Logic for round-robin load balancing**
 
-![](media/72e687a2854d97730019b830fe9262f8.png)
+    **if { [active_members Blue] \> 0 && [active_members Green] \> 0 } {**
 
-Pings continue even after FW1A power failure
+    **set selected_pool [expr {rand() \< 0.5 ? "Blue" : "Green"}]**
 
-![](media/b6529858cb10e0bad976baa4b8577b01.png)
+    **pool \$selected_pool**
 
-**Simulate Link Failure**
+    **} else {**
 
-Currently FW1B is Primary after simulated Hardware failure
+    **\# Fallback to operational pool if one of the pools is down**
 
-![](media/0e2f8d599ab318d665798e84667ba4c4.png)
+    **if { [active_members Blue] \> 0 } {**
 
-Suspend Port2 on FW1B while running a ping test for a link failure simulation. Since Port2(LAN) is a monitored link, FW1B should failover to FW1A as Primary and no pings should fail.
+    **pool Blue**
 
-![](media/65596c4199b68b7b1a84c054e5d9599c.png).
+    **} elseif { [active_members Green] \> 0 } {**
 
-No ping loss and FW1A is back to being Primary
+    **pool Green**
 
-![](media/4e97879322125c8ab675f0d42420b809.png)
+    **} else {**
 
-FW1A is HA Primary once more and you can see that on FW1B port2 is currently Down
+    **\# Handle scenario when both pools are down**
 
-![](media/85db9a840f53d1c3f569c33ee8a61d0c.png)
+    **\# For example, redirect to a maintenance page or error handling**
+
+    **}**
+
+    **}**
+
+    **} else {**
+
+    **\# Add default behavior or error handling if failover_initiate is not recognized**
+
+    **}**
+
+    **\# Failover logic based on elapsed time for Blue/Green switching**
+
+    **set current_time [clock seconds]**
+
+    **set elapsed_time [expr {\$current_time - \$failover_start_time}]**
+
+    **if { \$elapsed_time \< \$failover_duration && \$failover_initiate ne "Load_Balancing" } {**
+
+    **\# Gradual transition to secondary pool during the failover period**
+
+    **if { rand() \* 100 \< (100 \* \$elapsed_time / \$failover_duration) } {**
+
+    **pool \$secondary_pool**
+
+    **} else {**
+
+    **pool \$primary_pool**
+
+    **}**
+
+    **} elseif { \$failover_initiate ne "Load_Balancing" } {**
+
+    **\# After the failover period, route all traffic to the primary pool**
+
+    **pool \$primary_pool**
+
+    **}**
+
+    **}**
+
+    **}**
+
+2.  **Save the iRule**: After completing the script, save the iRule by clicking **Save**.
+
+#### **Assigning the iRule to a Virtual Server:**
+
+1.  **Virtual Server Configuration**:
+    -   Navigate to **Local Traffic** \> **Virtual Servers**.
+    -   Select the appropriate virtual server that handles your traffic.
+    -   Assign the newly created iRule to this virtual server under the **Resources** section.
+
+### In-Depth Understanding of iRule Components
+
+-   **Event-Driven Trigger**: Understand that the iRule reacts to specific traffic events, like **HTTP_REQUEST**.
+-   **Data Group Integration**: Grasp how the iRule fetches and uses data from the **BlueGreenConfigtest** data group to make real-time decisions.
+-   **Traffic Routing Logic**: Comprehend the conditions and logic applied to route traffic between different server pools or manage load balancing.
+
+### Best Practices in iRule Configuration
+
+-   **Modularity and Reusability**: Write modular iRules that can be reused across different applications and services.
+-   **Efficiency**: Keep the iRule as efficient as possible. Unnecessary complexity can impact performance.
+-   **Testing and Validation**: Always test the iRule in a controlled environment before deploying it to production.
+
+**Scenarios Covered by the iRule**
+
+-   Instant Failover to Blue Pool
+-   Instant Failover to Green Pool
+-   Timed Failover with Gradual Shift from Blue to Green
+-   Load Balancing between Blue and Green Pools
+-   Fallback to Operational Pool if One Pool is Down (During Load Balancing)
+
+**Scenario 1**: Instant Failover to Blue Pool
+
+User -\> Virtual IP (VIP) -\> iRule -\> Checks 'failover_initiate' -\> 'Initiate_Blue' detected -\> Directs traffic to Blue Pool -\> Destination Server in Blue Pool
+
+**Scenario 2:** Instant Failover to Green Pool
+
+User -\> Virtual IP (VIP) -\> iRule -\> Checks 'failover_initiate' -\> 'Initiate_Green' detected -\> Directs traffic to Green Pool -\> Destination Server in Green Pool
+
+**Scenario 3:** Timed Failover with Gradual Shift from Blue to Green
+
+User -\> Virtual IP (VIP) -\> iRule -\> Checks 'failover_initiate' and 'failover_duration' -\> 'failover_initiate' set for gradual shift and within 'failover_duration' -\> Gradually shifts traffic from Blue to Green based on elapsed time -\> Destination Server in Blue or Green Pool (depending on timing)
+
+**Scenario 4:** Load Balancing between Blue and Green Pools
+
+User -\> Virtual IP (VIP) -\> iRule -\> Checks 'failover_initiate' -\> 'Load_Balancing' detected -\> iRule performs round-robin selection between Blue and Green Pools -\> Destination Server in either Blue or Green Pool based on round-robin selection
+
+**Scenario 5:** Fallback to Operational Pool if One Pool is Down (During Load Balancing)
+
+User -\> Virtual IP (VIP) -\> iRule -\> 'Load_Balancing' mode -\> One pool down (e.g., Blue down) -\> iRule fallbacks to operational pool (Green in this case) -\> Destination Server in Green Pool
+
+Each of these scenarios represents how the iRule directs traffic based on its configuration and the current state of the server pools. The iRule acts as a dynamic decision-maker, routing traffic to the appropriate pool to ensure efficient load handling and failover management.
+
+Creating and configuring an iRule in F5 BIG-IP is a powerful way to control and manipulate network traffic. By linking the iRule with a data group and subsequently managing it through Ansible, you can create a highly dynamic and responsive networking environment. This approach allows for advanced traffic management strategies that can be adapted and changed with minimal disruption and maximum efficiency.
+
+# 
+
+## Introduction to Ansible Integration
+
+Integrating Ansible for automating network configurations, especially in complex environments like F5 BIG-IP, significantly enhances efficiency and consistency. Ansible's ability to automate the updating of data groups and iRules in F5 BIG-IP streamlines the process of implementing changes and ensures that configurations are consistently applied across the network.
+
+### Preparing the Ansible Environment
+
+#### **Setting Up Ansible:**
+
+1.  **Installation**: Ensure that Ansible is installed on your control machine. This can typically be done through package managers like **apt** for Ubuntu or **yum** for CentOS.
+2.  **Ansible F5 Modules**: Install the F5 modules for Ansible, which allow for interaction with F5 BIG-IP. This can be done using **ansible-galaxy collection install f5networks.f5_modules**.
+
+#### **Ansible Inventory Configuration:**
+
+1.  **Define F5 BIG-IP in Inventory**: In your Ansible project directory, create an inventory file (typically named **hosts**) and define your F5 BIG-IP device within it. Specify the IP address, connection protocol, username, and password or other authentication methods.
+
+### Writing the Ansible Playbook
+
+#### **Creating the Playbook File:**
+
+1.  **Playbook Setup**: Create a YAML file for your playbook (e.g., **f5_config.yml**). This file will contain the necessary tasks to update the F5 BIG-IP device.
+
+#### **Defining Playbook Variables:**
+
+1.  **Variable Declaration**: At the beginning of your playbook, define the variables **failover_initiate**, **failoverduration**, and **provider** (which includes F5 BIG-IP connection details).
+
+#### 
+
+**  
+**
+
+#### **Ansible Tasks for F5 BIG-IP:**
+
+1.  **Configuring play**: In your playbook, define tasks that will interact with the F5 BIG-IP device. Key tasks include:
+    -   Setting the failover start time.
+    -   Updating the **BlueGreenConfigtest** data group with new **environment**, **duration**, and **start_time** values.
+
+Example Playbook
+
+\---
+
+\- name: Modify BlueGreenConfigtest Data Group in F5 BIG-IP
+
+hosts: f5_devices
+
+gather_facts: no
+
+vars:
+
+provider:
+
+server: "your_f5_big_ip_address"
+
+user: "your_username"
+
+password: "your_password"
+
+validate_certs: false
+
+failover_initiate: "your_failover_initiate_value"
+
+failoverduration: "your_failover_duration_value"
+
+tasks:
+
+\- name: Set failover start time
+
+set_fact:
+
+failover_start_time: "{{ lookup('pipe', 'date +%s') }}"
+
+\- name: Update BlueGreenConfigtest data group
+
+bigip_data_group:
+
+name: "BlueGreenConfigtest"
+
+type: "string"
+
+records:
+
+\- key: "environment"
+
+value: "{{ failover_initiate }}"
+
+\- key: "duration"
+
+value: "{{ failoverduration }}"
+
+\- key: "start_time"
+
+value: "{{ failover_start_time }}"
+
+provider: "{{ provider }}"
+
+The Ansible playbook contains tasks for setting the **BlueGreenFailoverStartTime** and modifying the **BlueGreenConfigtest** data group. This automation ensures that changes to the iRule's behavior are consistent and error-free.
+
+**Hosts** (**hosts**: f5_devices): Defines the host group f5_devices, which should be specified in your Ansible inventory file.
+
+Variables (vars):
+
+**provider:** Contains connection details for the F5 BIG-IP device.
+
+**failover_initiate:** Specifies the environment to which traffic should be directed initially.
+
+**failoverduration:** Duration for failover (if applicable).
+
+Tasks:
+
+**Set Failover Start Time:** Captures the current Unix timestamp to denote the start time for failover.
+
+**Update Data Group:** Modifies the BlueGreenConfigtest data group with updated environment, duration, and start_time values.
+
+Required Modifications
+
+Replace **your_f5_big_ip_address**, **your_username**, and **your_password** with the actual IP address, username, and password for your F5 BIG-IP device.
+
+Set **your_failover_initiate_value** and **your_failover_duration_value** to the desired values for **failover_initiation** and **duration**.
+
+#### **Key Ansible Tasks**
+
+-   **Set Failover Start Time**: Captures the current Unix timestamp as the start time for failover.
+-   **Modify Data Group**: Updates the **BlueGreenConfigtest** with values for **environment**, **duration**, and **start_time**.
+
+### Variables in Ansible Tower
+
+If you have ansible Tower this variables can be defined there otherwise you have to modify your playbook to capture the below variables.
+
+-   **failover_initiate**
+-   **failoverduration**
+
+The integration of Ansible automation with the F5 iRule enhances our network's flexibility and resilience. This setup allows us to manage traffic efficiently during deployment and failover processes, ensuring minimal disruption and maintaining high availability.
+
+**Executing Ansible Playbook to Update iRule Configuration**
+
+Executing an Ansible playbook to update iRule configurations in F5 BIG-IP is a critical step in automating network management tasks. This process involves running a predefined Ansible playbook that communicates with the F5 BIG-IP device to apply the desired changes.
+
+**Pre-Execution Checklist**
+
+Before running the playbook, ensure the following:
+
+1.  **Playbook Validation**: Review the Ansible playbook (**f5_config.yml**) for any syntax errors or misconfigurations.
+2.  **Inventory Accuracy**: Confirm that the F5 BIG-IP device details in the Ansible inventory are correct and accessible.
+3.  **Variable Confirmation**: Double-check that all necessary variables (e.g., **failover_initiate**, **failoverduration**) are correctly defined and reflect the desired configuration states.
+4.  **Network Connectivity**: Ensure there's network connectivity between the Ansible control machine and the F5 BIG-IP device.
+
+**Running the Playbook**
+
+Execution Command:
+
+Execute the playbook using the following command in your Ansible control environment:
+
+**ansible-playbook f5_config.yml**
+
+*\*Note: if you have ansible tower make sure that ansible is calling the correct playbook and you edit your survey correctly with the required variables*
+
+What Happens During Execution:
+
+-   **Ansible Connection**: Ansible connects to the F5 BIG-IP device using the credentials and details provided in the inventory.
+-   **Task Execution**: Ansible executes the tasks defined in the playbook sequentially. This includes setting the failover start time and updating the **BlueGreenConfigtest** data group.
+-   **Configuration Update**: The playbook updates the data group in F5 BIG-IP, thereby indirectly modifying the behavior of the iRule according to the new settings.
+
+## Testing and Validating the Configuration
+
+### Overview
+
+After executing the Ansible playbook to update the iRule configuration in F5 BIG-IP, it's crucial to thoroughly test and validate the changes to ensure they are working as intended. This step is vital to confirm that the new configurations do not disrupt network operations and meet the required traffic management objectives.
+
+### Testing Strategies
+
+#### **1. Initial Checks:**
+
+-   **Check Ansible Playbook Output**: Review the output of the Ansible playbook execution for any errors or warnings. Ensure that all tasks have been completed successfully.
+-   **Verify Configuration in F5 BIG-IP**: Log into the F5 BIG-IP GUI or use the CLI to ensure that the data group **BlueGreenConfigtest** has been updated with the new values.
+
+#### **2. Functional Testing:**
+
+-   **Test Traffic Routing**: Simulate traffic to verify that the iRule correctly routes requests based on the updated data group values.
+-   **Validate Failover Scenarios**: Test the iRule's response to different **failover_initiate** values (e.g., **Initiate_Blue**, **Initiate_Green**, **Load_Balancing**) to ensure it behaves as expected in each scenario.
+-   **Load Balancing Checks**: If applicable, validate the load balancing logic by checking the distribution of traffic between the Blue and Green pools.
+
+#### **3. Timed Failover Testing:**
+
+-   **Gradual Transition**: If the iRule includes logic for timed failover, test this by setting the **duration** and observing the traffic shift from one pool to another over the specified period.
+
+### Validation Techniques
+
+#### **1. Monitoring and Logging:**
+
+-   **Real-Time Monitoring**: Use F5 BIG-IP's monitoring tools to observe the traffic patterns and ensure they align with the expected behavior.
+-   **Log Analysis**: Check the logs for any anomalies or errors that might indicate issues with the iRule's execution.
+
+#### **2. End-to-End Testing:**
+
+-   **User Experience**: Perform end-to-end testing to ensure that the user experience is unaffected by the changes. This can include testing website load times, application functionality, etc.
+
+#### **3. Fallback Testing:**
+
+-   **Redundancy Checks**: Validate the fallback mechanisms by simulating failure scenarios and observing how the traffic is rerouted.
+
+### Best Practices for Comprehensive Testing
+
+-   **Test in Stages**: Start with basic functionality tests and gradually move to more complex scenarios.
+-   **Automate Testing**: Where possible, use automated testing tools to simulate different traffic conditions and failover scenarios.
+-   **Document Test Cases**: Keep a record of all test cases and results for future reference and validation.
+-   **Involve Stakeholders**: If applicable, involve other teams (e.g., application teams, security teams) in the testing process to get a holistic view of the impact of the changes.
+
+### Conclusion
+
+Thorough testing and validation of the iRule and data group configurations in F5 BIG-IP are essential to ensure network stability and the efficacy of traffic management strategies. This process not only helps in identifying and rectifying potential issues but also provides confidence in the deployed configurations. Once testing is satisfactorily completed, the new configurations can be considered stable and reliable for production environments.
+
+# 
