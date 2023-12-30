@@ -1,0 +1,17 @@
+﻿no ip domain name lookup
+no logging console
+cdp run
+host S1
+int Vlan1
+ ip address 192.168.100.10 255.255.255.0
+ no shut
+username user privilege 15 secret password
+line con 0
+login local
+line aux 0
+line vty 0 4
+ login local
+ transport input all
+ ip domain-name www.Test.home
+crypto key generate rsa
+1024
