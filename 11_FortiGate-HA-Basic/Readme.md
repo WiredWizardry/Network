@@ -1,23 +1,23 @@
 # FortiGate Basic HA W/ Basic SD-WAN Lab Guide
 
-```Use Case
+**Use Case**
+
+```This lab focuses on configuring High Availability (HA) for your FortiGate firewalls with basic SD-WAN configured. HA is a critical component of network design, providing redundancy and fault tolerance to ensure uninterrupted network services. By configuring HA, you create a failover mechanism, where if one FortiGate device encounters an issue, the other takes over seamlessly, minimizing downtime.
 
 ```
+
+**Prerequisites**
 
 -   GNS3 / *EVE*-*NG environment*
 -   FortiGate firewall images
 -   Cisco images
 
-```Required Components
-
-```
+**Required Components**
 
 1.  **Network devices preconfigured; This lab assumes that you have a network device acting as an ISP connection, already configured and providing access to the internet. Ensure that your network is operational up to this point.**
 2.  **FortiGate KVM image**: You will need a FortiGate virtual machine (KVM image) where all the configurations in this lab will be implemented. Ensure that you have this VM set up and ready for use.
 
-```Key Steps
-
-```
+**Key Steps**
 
 1.  **Network Topology**: We'll design the layout of our network, including the placement of FortiGate firewalls, to ensure proper traffic flow and security.
 2.  **Initial Configuration**: Set up the basic configurations on the FortiGate firewall.
@@ -28,9 +28,7 @@
 7.  **Configure Firewall Policy and Test connectivity - In this final step, we'll create firewall policies to control traffic flow and test connectivity to ensure that our network operates as expected.  
     **
 
-```Lab Topology
-
-```
+**Lab Topology**
 
 A detailed topology will be outlined in the lab guide, indicating the network layout and connections between the control node and the FortiGate firewall.
 
@@ -38,9 +36,7 @@ A detailed topology will be outlined in the lab guide, indicating the network la
 
 \*please note that in highlighted in red we don’t spend much time on the configuration its up to you to decide to build this out the same
 
-```Lab Devices Information
-
-```
+**Lab Devices Information**
 
 | Hostname      | Description                                                            | Route-table                                                                                                       |
 |---------------|------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
@@ -53,14 +49,77 @@ A detailed topology will be outlined in the lab guide, indicating the network la
 
 We will start with the initial Firewall configuration. Configuring LAN, WAN1/2 and MGT
 
-| FW1A | !{ FW1A Configuration: ====================  config system global  set hostname FW1A set admintimeout 480 end  config system interface  edit port1 set alias MGT set mode static set ip 10.254.254.200 255.255.255.0 set allowaccess ping https ssh http end  config system interface  edit port3 set alias WAN-1 set mode static set ip 192.168.1.1 255.255.255.0 set allowaccess ping set role wan end   config system interface  edit port4 set alias WAN-2 set mode static set ip 192.168.2.1 255.255.255.0 set allowaccess ping set role wan end  config system interface  edit port2 set alias LAN set mode static set ip 10.0.1.254 255.255.255.0 set allowaccess ping set role lan end  config system dns set primary 8.8.8.8 set secondary 1.1.1.1 end |
-|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| FW1B | config system global  set hostname FW1A set admintimeout 480 end  config system interface  edit port1 set alias MGMT set mode static set ip 10.254.254.201 255.255.255.0 set allowaccess ping https ssh http end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+**FW1A configuration:**
+
+```
+config system global 
+set hostname FW1A
+set admintimeout 480
+end
+
+config system interface 
+edit port1
+set alias MGT
+set mode static
+set ip 10.254.254.200 255.255.255.0
+set allowaccess ping https ssh http
+end
+
+config system interface 
+edit port3
+set alias WAN-1
+set mode static
+set ip 192.168.1.1 255.255.255.0
+set allowaccess ping
+set role wan
+end
+   
+config system interface 
+edit port4
+set alias WAN-2
+set mode static
+set ip 192.168.2.1 255.255.255.0
+set allowaccess ping
+set role wan
+end
+
+config system interface 
+edit port2
+set alias LAN
+set mode static
+set ip 10.0.1.254 255.255.255.0
+set allowaccess ping
+set role lan
+end
+
+config system dns
+set primary 8.8.8.8
+set secondary 1.1.1.1
+end
+```
+
+**FW1B configuration:**
+
+```
+config system global 
+set hostname FW1A
+set admintimeout 480
+end
+
+config system interface 
+edit port1
+set alias MGMT
+set mode static
+set ip 10.254.254.201 255.255.255.0
+set allowaccess ping https ssh http
+end
+```
 
 Validate that routing table matches expected configs using expected command.
 
-| get router info routing-table all |
-|-----------------------------------|
+```
+get router info routing-table all
+```
 
 **FW1A**
 
@@ -125,7 +184,7 @@ Navigate to **System -\> HA**
 
 Select -\> **Active-Passive**
 
-Configure the below
+**Configure the below**
 
 | Name                 | Value                  | Info                                                                                         |
 |----------------------|------------------------|----------------------------------------------------------------------------------------------|
@@ -142,8 +201,9 @@ Configure the below
 
 Run below command on both Fw to force synchronize if need
 
-| execute ha synchronize start |
-|------------------------------|
+```
+execute ha synchronize start
+```
 
 As FW1A is synching status will show Not synchronized
 
@@ -151,8 +211,9 @@ As FW1A is synching status will show Not synchronized
 
 Cli command to see HA status:
 
-| get system ha status |
-|----------------------|
+```
+get system ha status
+```
 
 Once FW1A is finished synching status will show as synchronized
 
@@ -218,10 +279,42 @@ You should Now see the new SLA in the list
 
 ![](media/4cdbf8c0290ec9c3eefaa9ca8c86c52e.png)
 
-This step configuration can also be done vail CLI as Such
+This step configuration can also be done vail CLI as Such;
 
-| config system sdwan config zone edit "SDWAN" end  config system sdwan set status enable config members edit 1 set interface port1 set zone "SDWAN" set gateway 192.168.1.254 next edit 2 set interface port2 set zone "SDWAN" set gateway 192.168.2.254 next end config system sdwan set load-balance-mode source-dest-ip-based end  config system sdwan config health-check edit dnssrv set server 8.8.8.8 set update-static-route enable set members 1 2 next end end |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+```
+config system sdwan
+config zone
+edit "SDWAN"
+end
+
+config system sdwan
+set status enable
+config members
+edit 1
+set interface port1
+set zone "SDWAN"
+set gateway 192.168.1.254
+next
+edit 2
+set interface port2
+set zone "SDWAN"
+set gateway 192.168.2.254
+next
+end
+config system sdwan
+set load-balance-mode source-dest-ip-based
+end
+
+config system sdwan
+config health-check
+edit dnssrv
+set server 8.8.8.8
+set update-static-route enable
+set members 1 2
+next
+end
+end
+```
 
 # Step 4: Configure Static Route
 
@@ -237,10 +330,15 @@ From the Interface drop-down list, select SDWAN. Ensure that Status is Enabled. 
 
 ![](media/c677c212ee1e87276bf0b248f48b3464.png)
 
-Configuration above can be done vail CLI as well
+Configuration above can be done vail CLI as well;
 
-| config router static edit 1 set sdwan-zone SDWAN next end |
-|-----------------------------------------------------------|
+```
+config router static
+edit 1
+set sdwan-zone SDWAN
+next
+end
+```
 
 # Step 5: Configure Firewall Policy and Test connectivity
 
@@ -254,10 +352,25 @@ The **New Policy** page opens. Set the name, incoming interface, outgoing interf
 
 ![](media/70c61e8f4a6c106094d38d171ce4de02.png)
 
-Firewall policy can be created vail CLI as well
+Firewall policy can be created vail CLI as well;
 
-| config firewall policy edit 1 set name LAN-to-ISP set srcintf port2 set dstintf SDWAN set srcaddr all set dstaddr all set action accept set schedule always set service ALL set logtraffic all set nat enable set status enable next end |
-|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+```
+config firewall policy
+edit 1
+set name LAN-to-ISP
+set srcintf port2
+set dstintf SDWAN
+set srcaddr all
+set dstaddr all
+set action accept
+set schedule always
+set service ALL
+set logtraffic all
+set nat enable
+set status enable
+next
+end
+```
 
 **  
 **
