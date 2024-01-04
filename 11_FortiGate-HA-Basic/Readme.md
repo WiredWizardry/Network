@@ -6,7 +6,7 @@
 
 -   GNS3 / *EVE*-*NG environment*
 -   FortiGate firewall images
--   Cisco/ Tunnel termination images
+-   Cisco images
 
 ```Required Components
 
