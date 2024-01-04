@@ -157,8 +157,13 @@ The command **ping 192.168.100.10** is used to test the network connectivity fro
 
 3.  Add in entries for your devices.
 
-| 192.168.100.10 S1 192.168.100.20 S2 192.168.100.30 S3 192.168.100.40 S4 5 |
-|---------------------------------------------------------------------------|
+```
+192.168.100.10 S1 
+192.168.100.20 S2 
+192.168.100.30 S3 
+192.168.100.40 S4
+5
+```
 
 1.  Validate that host resolution is working by pinging device host entire name.
 
@@ -167,34 +172,39 @@ The command **ping 192.168.100.10** is used to test the network connectivity fro
 2.  Create inventory file for ansible. This will be used to tell Ansible what hosts to use.
     1.  Navigate to the parent directory with cd and verify your path with pwd
 
-| Use commands below; cd pwd |
-|----------------------------|
+```
+cd 
+pwd
+```
 
 ![](media/4f0ec28ba2471bc839277f8beafd1f02.png)
 
 1.  Create new inventory file that will be used for hosts. An Ansible Inventory File is a cornerstone in Ansible”s architecture, functioning as a manifest that defines the nodes or hosts upon which tasks and playbooks will be executed.
 
-| Use commands below; nano hosts |
-|--------------------------------|
-
-1.  Configure your hostname in the file with group names
-
-|   |
-|---|
-
+```
+Nano hosts
 ```
 
+Configure your hostname in the file with group names
+
+```
+[ios]
+S1
+S2
+S3
+S4
+S5
 ```
 
 **![](media/71f959e1a716dd7eb27da79d7ffe9fa9.png)**
 
 1.  Configure ansible configuration file to use your newly created host file.
-    -   Checking the ansible inventory you can see that although you configured hosts ansible is not able to see your host file
-        -   Use the below command to check ansible host file: **ansible –list-hosts all**
+    1.  Checking the ansible inventory you can see that although you configured hosts ansible is not able to see your host file
+        1.  Use the below command to check ansible host file: **ansible –list-hosts all**
 
             ![](media/68270947c9c00608a0b955e495f1c530.png)
 
-        -   Create new local ansible configuration file with below command: **nano ansible.cfg**
+        2.  Create new local ansible configuration file with below command: **nano ansible.cfg**
 
             Use below configs for the ansible configuration file and then save the file.
 
@@ -298,8 +308,8 @@ Use Case:
 -   Provides a swift and direct method to execute a basic command across multiple devices, based on the defined inventory.
 -   Particularly valuable in scenarios where quick, ad-hoc information retrieval from network devices is needed.
 
-**  
-**
+\*\*  
+\*\*
 
 ## Step 6: Filter on Ansible output
 
@@ -432,7 +442,7 @@ Components:
 
 **\| grep 50a9.2c00.4700**: Pipes (**\|**) the output of the Ansible command into **grep**, filtering for lines containing '50a9.2c00.4700'.
 
-Function**:**
+Function\*\*:\*\*
 
 -   This command will connect to every host in the **./hosts** file.
 -   On each host, it runs **show arp** to display the ARP table.

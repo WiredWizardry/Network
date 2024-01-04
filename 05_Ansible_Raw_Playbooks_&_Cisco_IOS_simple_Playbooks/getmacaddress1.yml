@@ -1,0 +1,17 @@
+---
+- name: Get MAC address table information
+  hosts: all
+  gather_facts: false
+
+
+  tasks:
+    - name: show MAC address table
+      raw: "show mac address-table"
+
+      register: print_output
+
+    -  debug: var=print_output.stdout_lines
+
+# Commands to run: 
+#1) ansible-playbook getmacaddress1.yml -u user -k
+#2) Grep for MAC address: ansible-playbook getmacaddress1.yml -u user -k | grep 'ok:\|4700'
