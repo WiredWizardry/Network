@@ -178,7 +178,10 @@ Note: For now, we are just bringing up BGP. Note: By default, ASN format is set 
 Use below configs
 
 ```
-router bgp 6600  neighbor 2.100.20.66 remote-as 65001  address-family ipv4  neighbor 2.100.20.66 activate  exit-address-family
+router bgp 6600
+neighbor 2.100.20.66 remote-as 65001
+address-family ipv4  neighbor 2.100.20.66 activate
+exit-address-family
 ```
 
 After which you should see that bgp came up
@@ -284,12 +287,14 @@ Use below configs
 ```
 ! Create the Route-Map to deny specific network 
 route-map DENY_55_55_55_0 permit 10  
-match ip address prefix-list DENY_PREFIX  
+match ip address prefix-list DENY_PREFIX
+ 
 ! Create the prefix list that matches the network 55.55.55.0/30 
 ip prefix-list DENY_PREFIX seq 5 deny 55.55.55.0/30 
 ip prefix-list DENY_PREFIX seq 10 permit 0.0.0.0/0 le 32 
- ! Apply the Route-Map to the BGP neighbors
- router bgp 6600  
+
+! Apply the Route-Map to the BGP neighbors
+router bgp 6600  
 address-family ipv4  
 neighbor 33.33.33.4 route-map DENY_55_55_55_0 out  
 neighbor 44.44.44.5 route-map DENY_55_55_55_0 out
