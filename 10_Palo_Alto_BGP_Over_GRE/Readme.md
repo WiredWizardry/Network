@@ -39,13 +39,12 @@ A detailed topology will be outlined in the lab guide, indicating the network la
 | Hostname   | Description                                                                      | IP                                                    | Protocol |
 |------------|----------------------------------------------------------------------------------|-------------------------------------------------------|----------|
 | Palo Alto  | Palo Alto firewall where our GRE tunnel will be configured alongside BGP configs | 192.168.1.0/24 63.63.63.2/31 2.100.20.66/31 0.0.0.0/0 | BGP      |
-|  L2-SW     | I86bi_linux_l2 Cisco basic L2 switch                                             | L2                                                    |          |
+| L2-SW      | I86bi_linux_l2 Cisco basic L2 switch                                             | L2                                                    |          |
 | Int-Router | Cisco CSR1000V                                                                   | 63.63.63.3/31 63.63.63.5/31                           | BPG      |
 | ISP        | Cisco CSR1000V                                                                   | 33.33.33.4/31 63.63.63.4/31                           | BGP      |
 | GRE-ISP    | Cisco CSR1000V                                                                   | 33.33.33.5/31 44.44.44.4/31 2.100.20.67/31            | BGP      |
 | AT&T       | Cisco CSR1000V                                                                   | 55.55.55.1/31 44.44.44.5/31                           | BGP      |
 | L3-SW      | Pfsense-2.6.0 Using wan interface and natting backend as LAN interface           | 0.0.0.0                                               |          |
-
 
 ## Step 1: Configure Palo Alto
 
@@ -157,14 +156,14 @@ Navigate to Network -\> Interface -\> Tunnel
 1.  Navigate to Network -\> Virtual Router -\> and Click on your Virtual Router
     1.  Under Virtual Router navigate to BGP and use below configs
 
-| Enable                        | Make sure this is checked                                                                                                                        |
-|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| Router ID                     | 63.63.63.2                                                                                                                                       |
-| AS Number                     | 65001                                                                                                                                            |
-| AUTH PROFILES                 | Use if you have bgp password                                                                                                                     |
-| BGP -\> Peer Group            | Peer Group Click [Add] And configure new bgp peer                                                                                                |
-| VR- BGP -\> Peer Group        | Name: GRE-Tunnel1 Click [Add] And configure new bgp peer                                                                                         |
-| VR- BGP -\> Peer Group – Peer | Name: GRE-ISP-TUN0 Peer AS: 6600 Interface: tunnel.1 Peer Address: 2.100.20.67 -change other settings as wanted otherwise  click [OK] click [OK] |
+| Enable                        | Make sure this is checked                                                                                                                       |
+|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Router ID                     | 63.63.63.2                                                                                                                                      |
+| AS Number                     | 65001                                                                                                                                           |
+| AUTH PROFILES                 | Use if you have bgp password                                                                                                                    |
+| BGP -\> Peer Group            | Peer Group Click [Add] And configure new bgp peer                                                                                               |
+| VR- BGP -\> Peer Group        | Name: GRE-Tunnel1 Click [Add] And configure new bgp peer                                                                                        |
+| VR- BGP -\> Peer Group – Peer | Name: GRE-ISP-TUN0 Peer AS: 6600 Interface: tunnel.1 Peer Address: 2.100.20.67 -change other settings as wanted otherwise click [OK] click [OK] |
 
 Note: For now, we are just bringing up BGP. Note: By default, ASN format is set to 2-byte(AS numbers range from 1 to 65535), if you need to switch to 4-byte (AS number ranging from 65536 to 4294967295 **make sure that 4 Byte is checked**
 
@@ -174,15 +173,13 @@ Note: For now, we are just bringing up BGP. Note: By default, ASN format is set 
 
 **Click [Ok] than commit your changes**
 
-**  
-**
-
 ### Configure BGP on the GRE-ISP and validate that BGP comes up
 
 Use below configs
 
-| router bgp 6600  neighbor 2.100.20.66 remote-as 65001  address-family ipv4  neighbor 2.100.20.66 activate  exit-address-family |
-|--------------------------------------------------------------------------------------------------------------------------------|
+```
+router bgp 6600  neighbor 2.100.20.66 remote-as 65001  address-family ipv4  neighbor 2.100.20.66 activate  exit-address-family
+```
 
 After which you should see that bgp came up
 
@@ -248,8 +245,7 @@ Navigate to the **BGP** section find **Import**
 
 **Click [Ok] than commit your changes**
 
-**  
-**
+\*\*
 
 ### Valiate that the Route-map took place and only the subnet you want is now in your RIP
 
@@ -285,8 +281,19 @@ On GRE-ISP we will make sure that 55.55.55.0/30 is only being sent to the GRE TU
 
 Use below configs
 
-| ! Create the Route-Map to deny specific network route-map DENY_55_55_55_0 permit 10  match ip address prefix-list DENY_PREFIX  ! Create the prefix list that matches the network 55.55.55.0/30 ip prefix-list DENY_PREFIX seq 5 deny 55.55.55.0/30 ip prefix-list DENY_PREFIX seq 10 permit 0.0.0.0/0 le 32  ! Apply the Route-Map to the BGP neighbors router bgp 6600  address-family ipv4  neighbor 33.33.33.4 route-map DENY_55_55_55_0 out  neighbor 44.44.44.5 route-map DENY_55_55_55_0 out  |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+```
+! Create the Route-Map to deny specific network 
+route-map DENY_55_55_55_0 permit 10  
+match ip address prefix-list DENY_PREFIX  
+! Create the prefix list that matches the network 55.55.55.0/30 
+ip prefix-list DENY_PREFIX seq 5 deny 55.55.55.0/30 
+ip prefix-list DENY_PREFIX seq 10 permit 0.0.0.0/0 le 32 
+ ! Apply the Route-Map to the BGP neighbors
+ router bgp 6600  
+address-family ipv4  
+neighbor 33.33.33.4 route-map DENY_55_55_55_0 out  
+neighbor 44.44.44.5 route-map DENY_55_55_55_0 out
+```
 
 ![](media/bf58c4714052a12cce7c1921fec35987.png)
 
@@ -298,10 +305,14 @@ Use below configs
 
 We can have GRE-ISP advertise a /24 subnet that contains the tunnel interface using a aggregate route.
 
-Use below configs
+Use below configs;
 
-|   router bgp 6600  address-family ipv4 aggregate-address 2.100.20.0 255.255.255.0 summary-only  network 2.100.20.66 mask 255.255.255.254  |
-|-------------------------------------------------------------------------------------------------------------------------------------------|
+```
+router bgp 6600  
+address-family ipv4 
+aggregate-address 2.100.20.0 255.255.255.0 summary-only  
+network 2.100.20.66 mask 255.255.255.254
+```
 
 In BGP, the aggregate-address command is used to create a summary route that is advertised to other BGP peers. For the aggregate address to be generated and advertised, at least one more specific route that falls within the aggregate range must be present in the BGP table, not just the local routing table.
 
