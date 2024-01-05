@@ -48,11 +48,199 @@ Proceeding to create a sample lab with Ansible ad-hoc commands targeting Cisco d
 
 ## Step 0: Configure Switch and Ansible
 
-Refer to the initial guide for configuring the Cisco switch (S1 - S5) for basic connectivity and SSH access.
+First, we have to configure the S1 for connectivity and to allow ssh. Use the below configs for S1
 
-Refer to the initial guide for configuring Ansible
+```
+no ip domain name lookup
+no logging console
+cdp run
+host S1
+int Vlan1
+ ip address 192.168.100.10 255.255.255.0
+ no shut
+username user privilege 15 secret password
+line con 0
+login local
+line aux 0
+line vty 0 4
+ login local
+ transport input all
+ ip domain-name www.Test.home
+crypto key generate rsa
+1024
+```
 
-## Step 1: Configure Switch and Ansible
+## ![](media/d14a845283a44dbe07111e95c2e8f47a.png)
+
+**Let”s go through each of the commands listed:**
+
+**no ip domain name lookup**: This command disables DNS lookup. Without this, any mistyped command in the console is interpreted as a hostname by the router, and it will attempt to resolve it via DNS, which can cause a delay.
+
+**no logging console**: This command disables logging to the console. By default, the router sends all log messages to its console port. Therefore, disabling this can be helpful in not interrupting CLI access with log messages.
+
+**cdp run**: This command enables the Cisco Discovery Protocol (CDP). CDP is a Cisco proprietary protocol used to discover Cisco devices in your network.
+
+**host S1**: This command changes the hostname of the device to "S1".
+
+**int vlan 1**: This command enters the configuration mode for VLAN 1.
+
+**ip address 192.168.100.10 255.255.255.0**: This command assigns the IP address 192.168.100.10 with a subnet mask of 255.255.255.0 to VLAN 1.
+
+**no shut**: This command brings up the VLAN interface if it”s administratively down. It”s equivalent to "enable this interface".
+
+**username user privilege 15 secret password:** This command creates a user with the username "user", assigns it a privilege level of 15 (the highest level, equivalent to root or admin), and sets the password to "password". The keyword "secret" indicates that the password will be stored in a hashed format.
+
+**line con 0**: This command enters line configuration mode for the console port.
+
+**login local**: This command sets the login method to use the local user database for authentication. It”s used here for the console and VTY lines, meaning that the username and password set earlier will be used for console and remote logins.
+
+**line vty 0 4**: This command enters line configuration mode for the first 5 VTY lines (0-4). VTY lines are used for Telnet and SSH access to the device.
+
+**transport input all**: This command is also used under vty configuration mode. It allows all types of protocols (telnet, SSH, etc.) for remote access. However, for security purposes, it is recommended to allow only SSH (i.e., “transport input ssh”).
+
+**ip domain-name www.Test.home**: This command sets the domain name of the device to www.Test.home. This is required for generating the RSA keys which are used by SSH for encryption and decryption.
+
+**crypto key generate rsa**: This command initiates the process of generating RSA keys which are required for SSH. After entering this command, you will be prompted to enter the modulus size.
+
+**1024**: This is the modulus size for the RSA keys. It represents the key length of 1024 bits. The larger the key size, the more secure the SSH connection, but at the cost of more processor overhead.
+
+These commands together configure your Cisco IOS device for secure remote access, enabling you to manage your device without needing to be physically connected to it. It also disables some default settings like DNS lookup on mistyped commands and console logging.
+
+Once configured Vlan1 should have a IP in place
+
+![](media/408f7bbb030fb7eaf526149a8a1d2724.png)
+
+![](media/4693b627d3a0cd77f9c222e9678e9e8e.png)
+
+![](media/033bb0b7a1ced1bad8d6b9847dd0f2ae.png)
+
+![](media/bbd5071ef3568b3a0f5e15473d59c4e5.png)
+
+![](media/bbdc48831b4a94bd1c6eaa169485e5cc.png)
+
+-   Repeat this step for all of S2-5 assigning them different IP”s and hostname according to the IP”s listed above
+
+**Configure Network connectivity to Ansible and verify connectivity.**
+
+\-Next, we have to configure the Ansible control node and verify that we can reach our router/switch.-
+
+1\. To statically configure a network right click the docker container and set the static ip: **192.168.100.1/24 in our case**
+
+Note: If you downloaded ansible and installed it on ansible you make changes in /etc/network/interfaces to set the IP on a interface by opening the “/etc/network/interfaces” file using a text editor
+
+![](media/c096fbcba2fb4b49eb60924e87dd474f.png)
+
+**Save the changes**
+
+2\. Restart/Start the network appliance and validate that your configs took by running the **ifconfig** command.
+
+![](media/a5d59087139b4117a72355767cfaa913.png)
+
+You should see the ip address you configured on the network adapter on the output.
+
+1.  Validate network connectivity by pinging all the devices you want to reach
+
+The command **ping 192.168.100.10** is used to test the network connectivity from the ansible control node to SW1 with the IP address 192.168.100.10 and so forth for the other switches/destination
+
+![](media/31c17a4762b6a0c8e715b063be991fe2.png)
+
+**Configure Ansible**
+
+1.  Validate that you can ssh into S1
+
+    ssh [user@192.168.100.10](mailto:user@192.168.100.10)
+
+    ![](media/16bdd2bb680bb95917b2e39da2dfcda6.png)Configure host resolution.
+
+2.  Add entries into the default host file for your devices using the below command: **nano /etc/hosts**
+
+    ![](media/179e7a531d22964155e65f1db61dd494.png)
+
+3.  Add in entries for your devices.
+
+```
+192.168.100.10 S1 
+192.168.100.20 S2 
+192.168.100.30 S3 
+4
+5
+```
+
+1.  Validate that host resolution is working by pinging device host entire name.
+
+    ![](media/559a235bdaca5808c07f7028521810bd.png)
+
+2.  Create inventory file for ansible. This will be used to tell Ansible what hosts to use.
+-   Navigate to the parent directory with cd and verify your path with pwd
+
+```
+cd 
+pwd
+```
+
+![](media/4f0ec28ba2471bc839277f8beafd1f02.png)
+
+1.  Create new inventory file that will be used for hosts. An Ansible Inventory File is a cornerstone in Ansible”s architecture, functioning as a manifest that defines the nodes or hosts upon which tasks and playbooks will be executed.
+
+```
+Nano hosts
+```
+
+Configure your hostname in the file with group names
+
+```
+[ios]
+S1
+S2
+S3
+S4
+S5
+```
+
+**![](media/71f959e1a716dd7eb27da79d7ffe9fa9.png)**
+
+1.  Configure ansible configuration file to use your newly created host file.
+-   Checking the ansible inventory you can see that although you configured hosts ansible is not able to see your host file
+    1.  Use the below command to check ansible host file: **ansible –list-hosts all**
+
+        ![](media/68270947c9c00608a0b955e495f1c530.png)
+
+        1.  Create new local ansible configuration file with below command: **nano ansible.cfg**
+
+            Use below configs for the ansible configuration file and then save the file.
+
+```
+[defaults]
+inventory = ./hosts
+host_key_checking = false
+timeout = 5
+```
+
+![](media/b8b764feeb122ba64e69b130c0ba47c3.png)
+
+Let”s go through each of the commands listed:
+
+**- [defaults]:** This is the primary default section which includes a variety of settings you can adjust.
+
+\- **hostfile = ./hosts –** This specifies the inventory file where Ansible will look to find the hosts that it can connect to. The “./hosts” suggests that the inventory file is named “hosts” and is located in the same directory as the “ansible.cfg” file.
+
+\- **host_key_checking** = false: By default, Ansible checks the SSH key of the remote hosts during the first connection. This configuration disables that check. This is often used in environments where host keys aren”t yet known or can change, like in cloud or testing environments.
+
+\- **timeout = 5**: This controls the number of seconds Ansible will wait for connections to hosts to complete. This is not the time limit for the entire task, but for the initial connection attempt. The default value is usually 10, but here it”s set to 5 seconds.
+
+1.  Verify ansible is using your created host file.
+
+Checking the ansible host file you can see that ansible is now able to see the hosts in your host file due to using the local ansible configuration file.
+
+Use the command below: **ansible –list-hosts all**
+
+![](media/c137b014103db47a67bc4ebbed8606d0.png)
+
+## 
+
+## 
+
+## Step 1: Retrieving ARP Table with Ansible
 
 The first step involves creating an Ansible playbook to retrieve the ARP (Address Resolution Protocol) table from Cisco switches. The ARP table is crucial as it maps IP addresses to MAC addresses, helping in network troubleshooting and understanding device connections on the network.
 
@@ -176,7 +364,7 @@ ansible-playbook getmacaddress1.yml -u [username] -k
 
 Replace [username] with the actual SSH username for the switches. The -k flag prompts for the SSH password.
 
-1.  **Optional: Filtering Output**
+**3. Optional: Filtering Output**
 
 If you need to focus on specific MAC addresses, you can filter the output:
 
@@ -194,7 +382,7 @@ This playbook provides a streamlined approach to gather MAC address table inform
 
 The objective of this step is to create and execute an Ansible playbook, named shver1.yml, that retrieves both the version and interface information from Cisco switches. This information is critical for verifying the software version for compliance and security purposes, as well as for checking the status of network interfaces.
 
-1.Creating the Playbook (shver1.yml)
+**1.Creating the Playbook (shver1.yml)**
 
 Start by opening a text editor on the control node:
 
@@ -240,7 +428,7 @@ The content of the playbook should be as follows:
 
 **debug: var=print_output.stdout_lines:** Displays the captured output for verification and analysis.
 
-2\. Executing the Playbook
+**2. Executing the Playbook**
 
 To run the playbook, use the following command:
 
@@ -252,8 +440,8 @@ Replace [username] with the appropriate SSH username for the switches. The -k op
 
 This playbook serves as an essential tool for network administrators, allowing for quick and efficient retrieval of version and interface information from Cisco switches. The ability to execute multiple commands in a single playbook and view their outputs can greatly aid in routine network checks, compliance audits, and troubleshooting tasks. Automation via Ansible in this manner not only saves time but also ensures consistency and accuracy in network management operations.
 
-**  
-**
+\*\*  
+\*\*
 
 ## Step 4: Backup and Save Output to File with Ansible
 
@@ -313,7 +501,7 @@ Then, input the following content into the playbook:
 
 **dest:** The destination path and filename for the saved file, dynamically using the host name for organization.
 
-1.  **Preparing Output Directory**
+**2. Preparing Output Directory**
 
 Before running the playbook, create a directory to store the output files:
 
@@ -321,7 +509,7 @@ Before running the playbook, create a directory to store the output files:
 mkdir output
 ```
 
-1.  Executing the Playbook
+**3. Executing the Playbook**
 
 Run the playbook with the following command:
 
