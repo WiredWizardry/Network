@@ -1,0 +1,45 @@
+---
+- name: F5 BIG-IP Load Balancer - Adjust Server Group Priority
+  hosts: bigip
+  connection: local
+  gather_facts: no
+  vars:
+    bigip_admin: admin
+    bigip_password: your_password
+    bigip_host: your_bigip_host
+    peak_hours: true  # Set to false during off-peak hours
+
+  tasks:
+    - name: Set Priority Group 1 to High Priority during peak hours
+      bigip_pool:
+        user: "{{ bigip_admin }}"
+        password: "{{ bigip_password }}"
+        server: "{{ bigip_host }}"
+        server_port: 443
+        validate_certs: no
+        state: present
+        name: "ecommerce_pool"
+        priority_group_activation: "{{ 100 if peak_hours else 50 }}"
+        provider:
+          server: "{{ bigip_host }}"
+          user: "{{ bigip_admin }}"
+          password: "{{ bigip_password }}"
+          validate_certs: no
+      delegate_to: localhost
+
+    - name: Adjust Priority Group 2 accordingly
+      bigip_pool:
+        user: "{{ bigip_admin }}"
+        password: "{{ bigip_password }}"
+        server: "{{ bigip_host }}"
+        server_port: 443
+        validate_certs: no
+        state: present
+        name: "backup_ecommerce_pool"
+        priority_group_activation: "{{ 50 if peak_hours else 100 }}"
+        provider:
+          server: "{{ bigip_host }}"
+          user: "{{ bigip_admin }}"
+          password: "{{ bigip_password }}"
+          validate_certs: no
+      delegate_to: localhost
