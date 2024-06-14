@@ -1,4 +1,4 @@
-```How-To Guide: Configuring Advanced iRule, Data Group, and Ansible Script
+```How-To
 
 ```
 
@@ -11,7 +11,7 @@ Given the advanced nature of the configuration, a how-to guide targeting this se
 1.  F5 BIG-IP Device: Ensure that you have access to an F5 BIG-IP device, which will be used to configure the iRule and the data group.
 2.  Ansible Environment: Set up your Ansible environment, which will be used to automate the configuration changes on the F5 BIG-IP.
 
-```Key Steps
+```Key
 
 ```
 
@@ -70,26 +70,26 @@ Data groups in F5 BIG-IP act like database tables or arrays. They are used to st
 ### Setting Up Data Groups for Advanced iRule Configuration
 
 1.  Purpose of Data Group in Our Scenario:
-    -   In our setup, the data group BlueGreenConfigtest is used to store configuration values that control how the iRule routes traffic. This includes keys for environment, duration, and start_time.
+    1.  In our setup, the data group BlueGreenConfigtest is used to store configuration values that control how the iRule routes traffic. This includes keys for environment, duration, and start_time.
 2.  Configuring a Data Group:
-    -   Log into the F5 BIG-IP user interface.
-    -   Navigate to Local Traffic \> iRules \> Data Group List.
-    -   Once there you can create a new data group
+    1.  Log into the F5 BIG-IP user interface.
+    2.  Navigate to Local Traffic \> iRules \> Data Group List.
+    3.  Once there you can create a new data group
 
 ### Deep Dive into iRule Configuration for Traffic Management
 
 1.  iRule Structure and Syntax:
-    -   Begin with the when statement to define the event that triggers the iRule. For our scenario, HTTP_REQUEST is the triggering event.
-    -   Use TCL syntax to write conditional statements and logic.
+    1.  Begin with the when statement to define the event that triggers the iRule. For our scenario, HTTP_REQUEST is the triggering event.
+    2.  Use TCL syntax to write conditional statements and logic.
 2.  Integrating Data Group in iRule:
-    -   Utilize the class match command to retrieve values from BlueGreenConfigtest.
-    -   These values dictate how traffic is routed between the Blue and Green pools.
+    1.  Utilize the class match command to retrieve values from BlueGreenConfigtest.
+    2.  These values dictate how traffic is routed between the Blue and Green pools.
 3.  iRule Logic Explained:
-    -   Traffic Direction: Based on the environment key, decide whether to route traffic to the Blue or Green pool.
-    -   Failover Handling: Use the duration and start_time keys to manage timed failover, gradually shifting traffic from one pool to another.
+    1.  Traffic Direction: Based on the environment key, decide whether to route traffic to the Blue or Green pool.
+    2.  Failover Handling: Use the duration and start_time keys to manage timed failover, gradually shifting traffic from one pool to another.
 4.  Advanced Routing Scenarios:
-    -   Handle instant failover by immediately directing all traffic to one pool.
-    -   Implement load balancing between pools, using data group values to guide the distribution.
+    1.  Handle instant failover by immediately directing all traffic to one pool.
+    2.  Implement load balancing between pools, using data group values to guide the distribution.
 
 Understanding how to create and configure iRules and data groups in F5 BIG-IP is crucial for advanced traffic management. This knowledge enables network engineers to build dynamic, responsive network environments that can adapt to various operational requirements. In the next sections, we'll explore how to automate these configurations using Ansible, enhancing efficiency and consistency in network management.
 
@@ -113,14 +113,14 @@ Creating a data group in F5 BIG-IP is a fundamental step in managing and utilizi
 
 1.  Initiate Creation: Click on the Create button to start setting up a new data group.
 2.  Configuration Settings:
-    -   Name: Enter a name for your data group, such as BlueGreenConfigtest. This name will be used to reference the data group in your iRules.
-    -   Type: Choose String as the type. This allows you to map string keys to string values.
-    -   Records: Add key-value pairs that will be used by the iRule. Initially, you can add placeholders that will later be updated by Ansible. For instance:
-        -   Key: environment, Value: placeholder
-        -   Key: duration, Value: placeholder
-        -   Key: start_time, Value: placeholder
+    1.  Name: Enter a name for your data group, such as BlueGreenConfigtest. This name will be used to reference the data group in your iRules.
+    2.  Type: Choose String as the type. This allows you to map string keys to string values.
+    3.  Records: Add key-value pairs that will be used by the iRule. Initially, you can add placeholders that will later be updated by Ansible. For instance:
+        1.  Key: environment, Value: placeholder
+        2.  Key: duration, Value: placeholder
+        3.  Key: start_time, Value: placeholder
 3.  Saving the Data Group:
-    -   After adding the required records, save the data group by clicking Finished.
+    1.  After adding the required records, save the data group by clicking Finished.
 
 ### Explanation of Data Group Components
 
@@ -158,19 +158,15 @@ Creating an iRule in F5 BIG-IP is a key step in implementing advanced traffic ma
 
 1.  Begin Creation: Click on the Create button.
 2.  iRule Setup:
-    -   Name the iRule: Provide a descriptive name for your iRule, such as bluegree_test.
-    -   Scripting the iRule: Enter the iRule script into the provided field. The script should include:
-        -   Event declaration: when HTTP_REQUEST { ... }.
-        -   Logic to read data from the BlueGreenConfigtest data group.
-        -   Conditional statements to route traffic based on the retrieved data.
+    1.  Name the iRule: Provide a descriptive name for your iRule, such as bluegree_test.
+    2.  Scripting the iRule: Enter the iRule script into the provided field. The script should include:
+        1.  Event declaration: when HTTP_REQUEST { ... }.
+        2.  Logic to read data from the BlueGreenConfigtest data group.
+        3.  Conditional statements to route traffic based on the retrieved data.
 3.  iRule Logic Explanation:
-    -   The iRule should contain logic to handle different traffic routing scenarios based on the values in the BlueGreenConfigtest data group. For instance, directing traffic to the Blue or Green pool depending on the environment value.
-    -   Include logic for timed failover and load balancing, referencing the duration and start_time keys from the data group.
-
-  
-
-
-1.  Irule example:
+    1.  The iRule should contain logic to handle different traffic routing scenarios based on the values in the BlueGreenConfigtest data group. For instance, directing traffic to the Blue or Green pool depending on the environment value.
+    2.  Include logic for timed failover and load balancing, referencing the duration and start_time keys from the data group.
+4.  Irule example:
 
     when HTTP_REQUEST {
 
@@ -272,14 +268,14 @@ Creating an iRule in F5 BIG-IP is a key step in implementing advanced traffic ma
 
     }
 
-2.  Save the iRule: After completing the script, save the iRule by clicking Save.
+5.  Save the iRule: After completing the script, save the iRule by clicking Save.
 
 #### Assigning the iRule to a Virtual Server:
 
 1.  Virtual Server Configuration:
-    -   Navigate to Local Traffic \> Virtual Servers.
-    -   Select the appropriate virtual server that handles your traffic.
-    -   Assign the newly created iRule to this virtual server under the Resources section.
+    1.  Navigate to Local Traffic \> Virtual Servers.
+    2.  Select the appropriate virtual server that handles your traffic.
+    3.  Assign the newly created iRule to this virtual server under the Resources section.
 
 ### In-Depth Understanding of iRule Components
 
@@ -354,14 +350,11 @@ Integrating Ansible for automating network configurations, especially in complex
 
 #### 
 
-  
-
-
 #### Ansible Tasks for F5 BIG-IP:
 
 1.  Configuring play: In your playbook, define tasks that will interact with the F5 BIG-IP device. Key tasks include:
-    -   Setting the failover start time.
-    -   Updating the BlueGreenConfigtest data group with new environment, duration, and start_time values.
+    1.  Setting the failover start time.
+    2.  Updating the BlueGreenConfigtest data group with new environment, duration, and start_time values.
 
 Example Playbook
 
