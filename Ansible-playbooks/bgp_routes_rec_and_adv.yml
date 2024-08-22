@@ -1,0 +1,80 @@
+---
+- name: Validate BGP Neighbors and Route Exchange
+  hosts: R1, R2
+  gather_facts: false
+  connection: local
+
+
+  vars:
+    cli:
+      username: user
+      password: password
+      authorize: yes
+      auth_pass: password
+    known_router_identifiers:
+      - 172.16.1.1
+      - 172.16.2.1
+
+  tasks:
+    - name: Retrieve BGP summary information
+      ios_command:
+        commands: 
+          - show ip bgp summary
+        provider: "{{ cli }}"
+      register: bgp_summary
+
+    - name: Extract neighbor IPs accurately
+      set_fact:
+        neighbor_ips: "{{ bgp_summary.stdout[0] | regex_findall('\\n(\\d+\\.\\d+\\.\\d+\\.\\d+)') }}"
+    
+    - name: Exclude known router identifiers from the neighbor IPs
+      set_fact:
+        filtered_neighbor_ips: "{{ neighbor_ips | difference(known_router_identifiers) }}"
+
+    # Validate received prefixes from each BGP neighbor
+    - name: Retrieve and check received routes from each neighbor
+      block:
+        - name: Retrieve received routes from neighbor
+          ios_command:
+            commands: 
+              - "show ip bgp neighbors {{ item }} routes"
+            provider: "{{ cli }}"
+          register: received_routes
+          loop: "{{ filtered_neighbor_ips }}"
+
+        - name: Check if received routes are present
+          assert:
+            that: 
+              - "'Total number of prefixes 0' not in received_routes.results | map(attribute='stdout') | join(' ')"
+            fail_msg: "No routes are being received from neighbor {{ item.item }}"
+            success_msg: "Routes are being received from neighbor {{ item.item }}"
+          loop: "{{ received_routes.results }}"
+
+    # Insert a real wait of 2 seconds
+    - name: Wait for 2 seconds
+      pause:
+        seconds: 2
+
+    # Debug message after wait
+    - name: Debug message post-wait
+      debug:
+        msg: "Completed checking received routes, moving to validate advertised prefixes"
+
+    # Validate advertised prefixes to each BGP neighbor
+    - name: Retrieve and check advertised routes to each neighbor
+      block:
+        - name: Retrieve advertised routes to neighbor
+          ios_command:
+            commands: 
+              - "show ip bgp neighbors {{ item }} advertised-routes"
+            provider: "{{ cli }}"
+          register: advertised_routes
+          loop: "{{ filtered_neighbor_ips }}"
+
+        - name: Check if advertised routes are present
+          assert:
+            that: 
+              - "'Total number of prefixes 0' not in advertised_routes.results | map(attribute='stdout') | join(' ')"
+            fail_msg: "No routes are being advertised to neighbor {{ item.item }}"
+            success_msg: "Routes are being advertised to neighbor {{ item.item }}"
+          loop: "{{ advertised_routes.results }}"
