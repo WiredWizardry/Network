@@ -24,79 +24,73 @@ AWX Survey Fields
 The survey must include the following variables:
 
 - panorama_host
-    Type: string
-    Default: none
-    What It Does: IP address or hostname for Panorama’s management interface.
+	Type: string
+	Default: none
+	What It Does: IP address or hostname for Panorama’s management interface.
 
 - panorama_api_key
-    Type: string
-    Default: none
-    What It Does: API key for authenticating to Panorama.
+	Type: string
+	Default: none
+	What It Does: API key for authenticating to Panorama.
 
 - panorama_port
-    Type: integer
-    Default: 443
-    What It Does: TCP port for the Panorama API if it differs from 443.
+	Type: integer
+	Default: 443
+	What It Does: TCP port for the Panorama API if it differs from 443.
 
 - device_group_name
-    Type: string
-    Default: none
-    What It Does: Name of the Panorama device group where the security rule will be placed.
+	Type: string
+	Default: none
+	What It Does: Name of the Panorama device group where the security rule will be placed.
 
 - rule_name_input
-    Type: string
-    Default: none
-    What It Does: The unique name you want to assign to the security rule.
+	Type: string
+	Default: none
+	What It Does: The unique name you want to assign to the security rule.
 
 - rule_description
-    Type: string
-    Default: Security rule created by AWX
-    What It Does: A human-readable description to store alongside the rule.
+	Type: string
+	Default: Security rule created by AWX
+	What It Does: A human-readable description to store alongside the rule.
 
 - source_zone
-    Type: string
-    Default: trust
-    What It Does: Panorama zone from which traffic will be allowed.
+	Type: string
+	Default: trust
+	What It Does: Panorama zone from which traffic will be allowed.
 
 - destination_zone
-    Type: string
-    Default: untrust
-    What It Does: Panorama zone to which traffic will be allowed.
+	Type: string
+	Default: untrust
+	What It Does: Panorama zone to which traffic will be allowed.
 
 - source_ip_list
-    Type: string
-    Default: any
-    What It Does: Comma-separated list of source IP addresses or network objects. Use “any” to allow all sources.
+	Type: string
+	Default: any
+	What It Does: Comma-separated list of source IP addresses or network objects. Use “any” to allow all sources.
 
 - dest_ip_list
-    Type: string
-    Default: any
-    What It Does: Comma-separated list of destination IP addresses or network objects. Use “any” to allow all.
+	Type: string
+	Default: any
+	What It Does: Comma-separated list of destination IP addresses or network objects. Use “any” to allow all.
 
 - service_list
-    Type: string
-    Default: (empty)
-    What It Does: Comma-separated list of service definitions, each in the form name/protocol/port.
+	Type: string
+	Default: (empty)
+	What It Does: Comma-separated list of service definitions, each in the form name/protocol/port.
 
 - commit_changes
-    Type: choice
-    Default: no
-    What It Does: Set to 'yes' to commit and push the configuration; set to 'no' to preview without committing.
+	Type: choice
+	Default: no
+	What It Does: Set to 'yes' to commit and push the configuration; set to 'no' to preview without committing.
 
 ---------------------------------
 Service List Format
 ---------------------------------
 
-You specify custom services by listing entries separated by commas. Each entry must use the pattern:
-
-<service-base-name>/<protocol>/<port>
-
-For example:
-
-http/tcp/80, https/tcp/443, dns/udp/53
+You specify custom services by listing entries separated by commas. Each entry must use the pattern: <service-base-name>/<protocol>/<port>
+For example: http/tcp/80, https/tcp/443, dns/udp/53
 
 The playbook will:
-
 * Split on commas and trim whitespace.
 * For every valid entry:
     * Construct a service object named “base-name-protocol-port” (for example, http-tcp-80).
