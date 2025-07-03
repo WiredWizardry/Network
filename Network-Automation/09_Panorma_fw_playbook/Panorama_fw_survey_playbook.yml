@@ -1,0 +1,178 @@
+---
+- name: Deploy Panorama rule using AWX survey inputs
+  hosts: localhost
+  connection: local
+  gather_facts: no   # no system facts needed, speeds up run
+  collections:
+    - paloaltonetworks.panos
+
+  #--------------------------------------------------------
+  # PRE-TASKS: ensure Python libs for PAN-OS modules
+  #--------------------------------------------------------
+  pre_tasks:
+    - name: Install required Python libraries for PAN-OS modules
+      pip:
+        name:
+          - pan-os-python>=1.7.3
+          - pan-python>=0.17.0
+          - xmltodict>=0.12.0
+        state: latest
+      delegate_to: localhost
+      run_once: true
+      tags: ['always']
+
+  #--------------------------------------------------------
+  # VARS: AWX inputs, computed lists, provider config
+  #--------------------------------------------------------
+  vars:
+    # Panorama/API connection parameters
+    panos_provider:
+      ip_address: "{{ panorama_host }}"
+      api_key:    "{{ panorama_api_key }}"
+      port:       "{{ panorama_port | default('443') }}"
+
+    # AWX survey inputs
+    device_group:   "{{ device_group_name }}"
+    rule_name:      "{{ rule_name_input }}"
+    description:    "{{ rule_description | default('Security rule created by AWX') }}"
+    src_zone:       "{{ source_zone      | default('trust') }}"
+    dest_zone:      "{{ destination_zone | default('untrust') }}"
+
+    # Source/destination IP handling: 'any' or comma-separated list
+    source_ips: >-
+      {%- if source_ip_list is not defined or source_ip_list | lower == 'any' -%}
+      ['any']
+      {%- else -%}
+      {{ source_ip_list.split(',') | map('trim') | list }}
+      {%- endif -%}
+
+    dest_ips: >-
+      {%- if dest_ip_list is not defined or dest_ip_list | lower == 'any' -%}
+      ['any']
+      {%- else -%}
+      {{ dest_ip_list.split(',') | map('trim') | list }}
+      {%- endif -%}
+
+    # Control whether to commit & push changes
+    do_commit: "{{ (commit_changes | default('no')) | lower == 'yes' }}"
+
+    # Raw service definition from survey (e.g. "http/tcp/80,https/tcp/443")
+    survey_services: "{{ service_list | default('') }}"
+
+    # Parse into list of dicts: name/protocol/port/description
+    parsed_services: >-
+      {%- set services = [] -%}
+      {%- if survey_services -%}
+        {%- for svc in survey_services.split(',') -%}
+          {%- set parts = svc.strip().split('/') -%}
+          {%- if parts | length == 3 -%}
+            {%- set _ = services.append({
+                 'name': parts[0] ~ '-' ~ parts[1] ~ '-' ~ parts[2],
+                 'protocol': parts[1],
+                 'destination_port': parts[2],
+                 'description': parts[0]
+               }) -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endif -%}
+      {{ services }}
+
+    # Final service-name list; defaults to ['any'] if no parsed_services
+    service_names: >-
+      {{ (parsed_services | length > 0)
+         | ternary(parsed_services | map(attribute='name') | list,
+                   ['any']) }}
+
+  #--------------------------------------------------------
+  # TASKS: Validation → Service creation → Preview → Rule + Commit + Push
+  #--------------------------------------------------------
+  tasks:
+    #-- Validate required survey inputs --------------------------------
+    - name: Assert device_group and rule_name are provided
+      assert:
+        that:
+          - device_group is defined and device_group | length > 0
+          - rule_name    is defined and rule_name    | length > 0
+        fail_msg: "Both device_group_name and rule_name_input are required."
+
+    #-- Ensure each parsed service object exists in Panorama -------------
+    - name: Ensure required service objects exist
+      paloaltonetworks.panos.panos_service_object:
+        provider:     "{{ panos_provider }}"
+        device_group: "{{ device_group }}"
+        name:         "{{ item.name }}"
+        protocol:     "{{ item.protocol }}"
+        destination_port: "{{ item.destination_port }}"
+        description:  "{{ item.description }}"
+        state:        present
+      loop: "{{ parsed_services }}"
+      when: parsed_services | length > 0
+      loop_control:
+        label: "{{ item.name }}"
+
+    #-- Preview what we’re about to do ----------------------------------
+    - name: Display configuration summary before applying
+      debug:
+        msg:
+          - "Device Group:     {{ device_group }}"
+          - "Rule Name:        {{ rule_name }}"
+          - "Description:      {{ description }}"
+          - "Source Zone(s):   {{ src_zone }}"
+          - "Dest Zone(s):     {{ dest_zone }}"
+          - "Source IP(s):     {{ source_ips | join(', ') }}"
+          - "Dest IP(s):       {{ dest_ips   | join(', ') }}"
+          - "Services:         {{ service_names | join(', ') }}"
+          - "Commit Changes?:  {{ do_commit | ternary('Yes','No') }}"
+
+    #-- Create or update the security rule -------------------------------
+    - name: Create or update security rule in Panorama
+      paloaltonetworks.panos.panos_security_rule:
+        provider:      "{{ panos_provider }}"
+        device_group:  "{{ device_group }}"
+        rule_name:     "{{ rule_name }}"
+        description:   "{{ description }}"
+        source_zone:   ["{{ src_zone }}"]
+        source_ip:     "{{ source_ips }}"
+        destination_zone: ["{{ dest_zone }}"]
+        destination_ip:   "{{ dest_ips }}"
+        application:   ['any']
+        service:       "{{ service_names }}"
+        action:        allow
+        log_end:       true
+        rulebase:      pre-rulebase
+        state:         present
+      register: rule_result
+
+    #-- Commit changes on Panorama if requested --------------------------
+    - name: Commit changes to Panorama
+      paloaltonetworks.panos.panos_commit_panorama:
+        provider:    "{{ panos_provider }}"
+        description: "AWX commit: {{ rule_name }}"
+      when: do_commit
+      register: commit_result
+      ignore_errors: yes
+
+    #-- Push committed config down to the device group ------------------
+    - name: Push configuration to device group
+      paloaltonetworks.panos.panos_commit_push:
+        provider: "{{ panos_provider }}"
+        style:    device group
+        name:     "{{ device_group }}"
+        description: "Push AWX rule {{ rule_name }}"
+      when:
+        - do_commit
+        - commit_result is succeeded
+      register: push_result
+      ignore_errors: yes
+
+  #--------------------------------------------------------
+  # POST-TASK: final status summary
+  #--------------------------------------------------------
+  post_tasks:
+    - name: Display final deployment summary
+      debug:
+        msg:
+          - "Deployment Status: {{ (rule_result is defined and not rule_result.failed) | ternary('Success','Failed') }}"
+          - "Rule Changes:     {{ (rule_result.changed | default(false))     | ternary('Created/Updated','No changes') }}"
+          - "Services:         {{ service_names | join(', ') }}"
+          - "Committed:        {{ do_commit | ternary('Yes','No') }}"
