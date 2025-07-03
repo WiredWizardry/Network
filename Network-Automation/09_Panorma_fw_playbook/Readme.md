@@ -24,9 +24,9 @@ AWX Survey Fields
 The survey must include the following variables:
 
 - panorama_host
-	Type: string
-	Default: none
-	What It Does: IP address or hostname for Panorama’s management interface.
+Type: string
+Default: none
+What It Does: IP address or hostname for Panorama’s management interface.
 
 - panorama_api_key
 	Type: string
